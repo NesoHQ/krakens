@@ -70,18 +70,32 @@ func main() {
 
 	// Setup router
 	router := gin.Default()
-	router.Use(middleware.CORSMiddleware(cfg.FrontendURL))
 
-	// Public routes
+	// Tracking endpoint (with permissive CORS - needs to accept requests from any website)
+	router.OPTIONS("/api/track", middleware.TrackingCORSMiddleware())
+	router.POST("/api/track", middleware.TrackingCORSMiddleware(), trackingHandler.Track)
+
+	// Public routes (with restricted CORS)
+	router.OPTIONS("/api/auth/register", middleware.CORSMiddleware(cfg.FrontendURL))
+	router.OPTIONS("/api/auth/login", middleware.CORSMiddleware(cfg.FrontendURL))
+
 	public := router.Group("/api")
+	public.Use(middleware.CORSMiddleware(cfg.FrontendURL))
 	{
 		public.POST("/auth/register", authHandler.Register)
 		public.POST("/auth/login", authHandler.Login)
-		public.POST("/track", trackingHandler.Track)
 	}
 
 	// Protected routes
+	router.OPTIONS("/api/stats/realtime", middleware.CORSMiddleware(cfg.FrontendURL))
+	router.OPTIONS("/api/stats/overview", middleware.CORSMiddleware(cfg.FrontendURL))
+	router.OPTIONS("/api/domains", middleware.CORSMiddleware(cfg.FrontendURL))
+	router.OPTIONS("/api/domains/:id", middleware.CORSMiddleware(cfg.FrontendURL))
+	router.OPTIONS("/api/api-keys", middleware.CORSMiddleware(cfg.FrontendURL))
+	router.OPTIONS("/api/api-keys/:id", middleware.CORSMiddleware(cfg.FrontendURL))
+
 	protected := router.Group("/api")
+	protected.Use(middleware.CORSMiddleware(cfg.FrontendURL))
 	protected.Use(middleware.AuthMiddleware(cfg.JWTSecret))
 	{
 		// Domains

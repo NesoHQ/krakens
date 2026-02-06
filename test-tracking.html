@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Herodotus Tracking Test</title>
+  
+<!-- Herodotus Analytics -->
+<script src="http://localhost:3000/herodotus.js"></script>
+<script>
+  Herodotus.init('hrd_6610051b6cd4811a523ac7705f34546c86af9797cfb638fe8f0fc05658353ac5');
+</script>
+  
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .card {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    h1 { color: #333; }
+    .status { 
+      padding: 15px; 
+      background: #e3f2fd; 
+      border-left: 4px solid #2196f3;
+      margin: 20px 0;
+      border-radius: 4px;
+    }
+    button {
+      background: #2196f3;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      margin: 5px;
+    }
+    button:hover { background: #1976d2; }
+    .info { color: #666; font-size: 14px; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>🧪 Herodotus Tracking Test Page</h1>
+    
+    <div class="status">
+      <strong>✅ Tracking Active</strong><br>
+      This page is now being tracked by Herodotus Analytics.
+    </div>
+    
+    <h2>What's being tracked?</h2>
+    <ul>
+      <li>Page view (tracked automatically on load)</li>
+      <li>Browser and device information</li>
+      <li>Referrer and navigation data</li>
+      <li>Time spent on page</li>
+    </ul>
+    
+    <h2>Test Navigation</h2>
+    <p>Click these buttons to simulate navigation (if your tracking supports it):</p>
+    <button onclick="simulateNavigation('/page1')">Go to Page 1</button>
+    <button onclick="simulateNavigation('/page2')">Go to Page 2</button>
+    <button onclick="simulateNavigation('/about')">Go to About</button>
+    
+    <div class="info">
+      <strong>How to verify:</strong>
+      <ol>
+        <li>Make sure your Herodotus backend is running (port 8080)</li>
+        <li>Make sure your Herodotus frontend is running (port 3000)</li>
+        <li>Replace 'YOUR_API_KEY_HERE' in the code above with your actual API key</li>
+        <li>Open this file in your browser</li>
+        <li>Check your Herodotus dashboard - you should see this visit appear!</li>
+        <li>Open browser DevTools Console (F12) to see any tracking errors</li>
+      </ol>
+    </div>
+  </div>
+  
+  <script>
+    function simulateNavigation(path) {
+      console.log('Simulating navigation to:', path);
+      // If Herodotus has a track method, you could call it here
+      if (window.Herodotus && window.Herodotus.track) {
+        window.Herodotus.track('pageview', { path: path });
+      }
+      alert('Navigation to ' + path + ' tracked!');
+    }
+    
+    // Log when tracking initializes
+    console.log('Herodotus tracking test page loaded');
+    console.log('Herodotus object:', window.Herodotus);
+  </script>
+</body>
+</html>

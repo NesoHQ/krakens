@@ -6,7 +6,7 @@
   'use strict';
 
   const config = {
-    apiUrl: 'https://api.herodotus.io/api/track',
+    apiUrl: 'http://localhost:8080/api/track',
     apiKey: null,
     visitorId: null,
   };
@@ -15,7 +15,7 @@
   function getVisitorId() {
     let visitorId = localStorage.getItem('hrd_visitor_id');
     if (!visitorId) {
-      visitorId = 'v_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+      visitorId = 'v_' + Math.random().toString(36).substring(2, 11) + Date.now().toString(36);
       localStorage.setItem('hrd_visitor_id', visitorId);
     }
     return visitorId;
@@ -35,32 +35,45 @@
       visitor_id: config.visitorId,
     };
 
-    // Use sendBeacon for reliability
-    if (navigator.sendBeacon) {
-      const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
-      navigator.sendBeacon(config.apiUrl, blob);
-    } else {
-      // Fallback to fetch
-      fetch(config.apiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-API-Key': config.apiKey,
-        },
-        body: JSON.stringify(payload),
-        keepalive: true,
-      }).catch(err => console.error('Herodotus tracking error:', err));
-    }
+    // Use fetch with API key header
+    fetch(config.apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': config.apiKey,
+      },
+      body: JSON.stringify(payload),
+      keepalive: true,
+    })
+    .then(response => {
+      if (!response.ok) {
+        return response.json().then(err => {
+          console.error('Herodotus tracking failed:', err);
+        });
+      }
+      console.log('Herodotus: Event tracked successfully');
+    })
+    .catch(err => console.error('Herodotus tracking error:', err));
   }
 
   // Initialize
   function init(apiKey, options = {}) {
+    if (!apiKey) {
+      console.error('Herodotus: API key is required');
+      return;
+    }
+
     config.apiKey = apiKey;
     config.visitorId = getVisitorId();
     
     if (options.apiUrl) {
       config.apiUrl = options.apiUrl;
     }
+
+    console.log('Herodotus initialized:', {
+      apiUrl: config.apiUrl,
+      visitorId: config.visitorId
+    });
 
     // Track initial page view
     track({});

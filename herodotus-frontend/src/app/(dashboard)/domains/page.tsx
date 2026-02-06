@@ -35,10 +35,10 @@ export default function DomainsPage() {
     setError('');
     setSuccess('');
 
-    // Validate domain format
-    const domainRegex = /^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9]?\.[a-zA-Z]{2,}$/;
+    // Validate domain format (allow localhost for testing)
+    const domainRegex = /^([a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9]?\.[a-zA-Z]{2,}|localhost)$/;
     if (!domainRegex.test(newDomain)) {
-      setError('Please enter a valid domain name (e.g., example.com)');
+      setError('Please enter a valid domain name (e.g., example.com or localhost)');
       return;
     }
 
@@ -215,7 +215,7 @@ export default function DomainsPage() {
                   autoFocus
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  Enter your domain without http:// or https://
+                  Enter your domain without http:// or https:// (e.g., example.com or localhost)
                 </p>
               </div>
               
