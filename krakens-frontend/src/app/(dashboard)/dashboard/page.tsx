@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { getRealtimeStats, getOverviewStats, getDomains, getAPIKeys } from '@/lib/api';
 import type { RealtimeStats, OverviewStats, Domain } from '@/types';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { Card } from '@/components/ui/card';
 import GettingStarted from '@/components/onboarding/GettingStarted';
 import StatCard from '@/components/ui/StatCard';
 import EmptyState from '@/components/ui/EmptyState';
@@ -80,8 +81,8 @@ export default function DashboardPage() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your analytics...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading your analytics...</p>
         </div>
       </div>
     );
@@ -101,21 +102,21 @@ export default function DashboardPage() {
         />
         
         <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="text-center p-6 bg-blue-50 rounded-lg">
+          <Card className="text-center p-6 bg-primary/5">
             <div className="text-4xl mb-3">📊</div>
-            <h3 className="font-semibold text-gray-900 mb-2">Real-Time Analytics</h3>
-            <p className="text-sm text-gray-600">Track visitors, page views, and user behavior in real-time</p>
-          </div>
-          <div className="text-center p-6 bg-purple-50 rounded-lg">
+            <h3 className="font-semibold mb-2">Real-Time Analytics</h3>
+            <p className="text-sm text-muted-foreground">Track visitors, page views, and user behavior in real-time</p>
+          </Card>
+          <Card className="text-center p-6 bg-accent/5">
             <div className="text-4xl mb-3">🔒</div>
-            <h3 className="font-semibold text-gray-900 mb-2">Privacy-First</h3>
-            <p className="text-sm text-gray-600">IP anonymization and GDPR-compliant tracking</p>
-          </div>
-          <div className="text-center p-6 bg-green-50 rounded-lg">
+            <h3 className="font-semibold mb-2">Privacy-First</h3>
+            <p className="text-sm text-muted-foreground">IP anonymization and GDPR-compliant tracking</p>
+          </Card>
+          <Card className="text-center p-6 bg-success/5">
             <div className="text-4xl mb-3">⚡</div>
-            <h3 className="font-semibold text-gray-900 mb-2">Lightweight SDK</h3>
-            <p className="text-sm text-gray-600">Less than 5KB tracking script, no impact on performance</p>
-          </div>
+            <h3 className="font-semibold mb-2">Lightweight SDK</h3>
+            <p className="text-sm text-muted-foreground">Less than 5KB tracking script, no impact on performance</p>
+          </Card>
         </div>
       </div>
     );
@@ -128,11 +129,11 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-1">Analytics Dashboard</h1>
-          <p className="text-gray-600">Real-time insights for your website traffic</p>
+          <h1 className="text-3xl font-bold mb-1">Analytics Dashboard</h1>
+          <p className="text-muted-foreground">Real-time insights for your website traffic</p>
         </div>
         <div className="flex items-center space-x-4">
-          <div className="text-sm text-gray-500">
+          <div className="text-sm text-muted-foreground">
             Last updated: {lastUpdate.toLocaleTimeString()}
           </div>
           <select
@@ -194,79 +195,80 @@ export default function DashboardPage() {
       </div>
 
       {/* Traffic Chart */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <Card className="p-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-xl font-bold text-gray-900">Traffic Overview</h2>
-            <p className="text-sm text-gray-600">Page views per minute (last 60 minutes)</p>
+            <h2 className="text-xl font-bold">Traffic Overview</h2>
+            <p className="text-sm text-muted-foreground">Page views per minute (last 60 minutes)</p>
           </div>
           <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 bg-primary-600 rounded-full animate-pulse"></div>
-            <span className="text-sm text-gray-600">Live</span>
+            <div className="w-3 h-3 bg-primary rounded-full animate-pulse"></div>
+            <span className="text-sm text-muted-foreground">Live</span>
           </div>
         </div>
         {(realtimeStats?.hits_per_minute?.length || 0) > 0 ? (
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={realtimeStats?.hits_per_minute || []}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
               <XAxis 
                 dataKey="minute" 
-                stroke="#9ca3af"
+                className="text-muted-foreground"
                 style={{ fontSize: '12px' }}
               />
               <YAxis 
-                stroke="#9ca3af"
+                className="text-muted-foreground"
                 style={{ fontSize: '12px' }}
               />
               <Tooltip 
                 contentStyle={{ 
-                  backgroundColor: '#fff',
-                  border: '1px solid #e5e7eb',
+                  backgroundColor: 'hsl(var(--card))',
+                  border: '1px solid hsl(var(--border))',
                   borderRadius: '8px',
-                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                  color: 'hsl(var(--foreground))'
                 }}
               />
               <Line 
                 type="monotone" 
                 dataKey="hits" 
-                stroke="#0ea5e9" 
+                stroke="hsl(var(--primary))" 
                 strokeWidth={3}
-                dot={{ fill: '#0ea5e9', r: 4 }}
+                dot={{ fill: 'hsl(var(--primary))', r: 4 }}
                 activeDot={{ r: 6 }}
               />
             </LineChart>
           </ResponsiveContainer>
         ) : (
-          <div className="h-64 flex items-center justify-center text-gray-400">
+          <div className="h-64 flex items-center justify-center text-muted-foreground">
             <div className="text-center">
               <div className="text-4xl mb-2">📊</div>
               <p>No traffic data yet</p>
             </div>
           </div>
         )}
-      </div>
+      </Card>
 
       {/* Top Pages and Referrers */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Top Pages */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <Card className="p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-gray-900">Top Pages</h2>
-            <span className="text-sm text-gray-500">Most visited</span>
+            <h2 className="text-xl font-bold">Top Pages</h2>
+            <span className="text-sm text-muted-foreground">Most visited</span>
           </div>
           {(realtimeStats?.top_pages?.length || 0) > 0 ? (
             <div className="space-y-3">
               {realtimeStats?.top_pages?.slice(0, 5).map((page, i) => (
-                <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                <div key={i} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors">
                   <div className="flex items-center space-x-3 flex-1 min-w-0">
-                    <div className="flex-shrink-0 w-8 h-8 bg-primary-100 text-primary-600 rounded-full flex items-center justify-center font-semibold text-sm">
+                    <div className="flex-shrink-0 w-8 h-8 bg-primary/10 text-primary rounded-full flex items-center justify-center font-semibold text-sm">
                       {i + 1}
                     </div>
-                    <span className="text-sm text-gray-700 truncate font-medium">{page.path}</span>
+                    <span className="text-sm truncate font-medium">{page.path}</span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <span className="text-sm font-bold text-gray-900">{page.hits}</span>
-                    <span className="text-xs text-gray-500">views</span>
+                    <span className="text-sm font-bold">{page.hits}</span>
+                    <span className="text-xs text-muted-foreground">views</span>
                   </div>
                 </div>
               ))}
@@ -278,29 +280,29 @@ export default function DashboardPage() {
               description="Page views will appear here once you start tracking"
             />
           )}
-        </div>
+        </Card>
 
         {/* Top Referrers */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <Card className="p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-gray-900">Top Referrers</h2>
-            <span className="text-sm text-gray-500">Traffic sources</span>
+            <h2 className="text-xl font-bold">Top Referrers</h2>
+            <span className="text-sm text-muted-foreground">Traffic sources</span>
           </div>
           {(realtimeStats?.top_referrers?.length || 0) > 0 ? (
             <div className="space-y-3">
               {realtimeStats?.top_referrers?.slice(0, 5).map((ref, i) => (
-                <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                <div key={i} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors">
                   <div className="flex items-center space-x-3 flex-1 min-w-0">
-                    <div className="flex-shrink-0 w-8 h-8 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center font-semibold text-sm">
+                    <div className="flex-shrink-0 w-8 h-8 bg-primary/10 text-primary rounded-full flex items-center justify-center font-semibold text-sm">
                       {i + 1}
                     </div>
-                    <span className="text-sm text-gray-700 truncate font-medium">
+                    <span className="text-sm truncate font-medium">
                       {ref.referrer || '🔗 Direct Traffic'}
                     </span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <span className="text-sm font-bold text-gray-900">{ref.hits}</span>
-                    <span className="text-xs text-gray-500">visits</span>
+                    <span className="text-sm font-bold">{ref.hits}</span>
+                    <span className="text-xs text-muted-foreground">visits</span>
                   </div>
                 </div>
               ))}
@@ -312,14 +314,14 @@ export default function DashboardPage() {
               description="Traffic sources will appear here once visitors arrive"
             />
           )}
-        </div>
+        </Card>
       </div>
 
       {/* Device, Browser, and Country Stats */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Devices */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Devices</h2>
+        <Card className="p-6">
+          <h2 className="text-xl font-bold mb-4">Devices</h2>
           {Object.keys(realtimeStats?.devices || {}).length > 0 ? (
             <>
               <ResponsiveContainer width="100%" height={200}>
@@ -340,7 +342,14 @@ export default function DashboardPage() {
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'hsl(var(--card))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px',
+                      color: 'hsl(var(--foreground))'
+                    }}
+                  />
                 </PieChart>
               </ResponsiveContainer>
               <div className="mt-4 space-y-2">
@@ -351,26 +360,26 @@ export default function DashboardPage() {
                         className="w-3 h-3 rounded-full" 
                         style={{ backgroundColor: COLORS[i % COLORS.length] }}
                       />
-                      <span className="text-gray-700">{device}</span>
+                      <span>{device}</span>
                     </div>
-                    <span className="font-semibold text-gray-900">{count}</span>
+                    <span className="font-semibold">{count}</span>
                   </div>
                 ))}
               </div>
             </>
           ) : (
-            <div className="h-48 flex items-center justify-center text-gray-400">
+            <div className="h-48 flex items-center justify-center text-muted-foreground">
               <div className="text-center">
                 <div className="text-3xl mb-2">📱</div>
                 <p className="text-sm">No device data</p>
               </div>
             </div>
           )}
-        </div>
+        </Card>
 
         {/* Browsers */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Browsers</h2>
+        <Card className="p-6">
+          <h2 className="text-xl font-bold mb-4">Browsers</h2>
           {Object.keys(realtimeStats?.browsers || {}).length > 0 ? (
             <div className="space-y-3">
               {Object.entries(realtimeStats?.browsers || {})
@@ -381,12 +390,12 @@ export default function DashboardPage() {
                   return (
                     <div key={browser}>
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm font-medium text-gray-700">{browser}</span>
-                        <span className="text-sm text-gray-600">{count} ({percentage.toFixed(0)}%)</span>
+                        <span className="text-sm font-medium">{browser}</span>
+                        <span className="text-sm text-muted-foreground">{count} ({percentage.toFixed(0)}%)</span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="w-full bg-muted rounded-full h-2">
                         <div
-                          className="bg-primary-600 h-2 rounded-full transition-all"
+                          className="bg-primary h-2 rounded-full transition-all"
                           style={{ width: `${percentage}%` }}
                         />
                       </div>
@@ -395,18 +404,18 @@ export default function DashboardPage() {
                 })}
             </div>
           ) : (
-            <div className="h-48 flex items-center justify-center text-gray-400">
+            <div className="h-48 flex items-center justify-center text-muted-foreground">
               <div className="text-center">
                 <div className="text-3xl mb-2">🌐</div>
                 <p className="text-sm">No browser data</p>
               </div>
             </div>
           )}
-        </div>
+        </Card>
 
         {/* Countries */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Countries</h2>
+        <Card className="p-6">
+          <h2 className="text-xl font-bold mb-4">Countries</h2>
           {Object.keys(realtimeStats?.countries || {}).length > 0 ? (
             <div className="space-y-3">
               {Object.entries(realtimeStats?.countries || {})
@@ -418,12 +427,12 @@ export default function DashboardPage() {
                   return (
                     <div key={country}>
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm font-medium text-gray-700">{country}</span>
-                        <span className="text-sm text-gray-600">{count} ({percentage.toFixed(0)}%)</span>
+                        <span className="text-sm font-medium">{country}</span>
+                        <span className="text-sm text-muted-foreground">{count} ({percentage.toFixed(0)}%)</span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="w-full bg-muted rounded-full h-2">
                         <div
-                          className="bg-green-600 h-2 rounded-full transition-all"
+                          className="bg-accent h-2 rounded-full transition-all"
                           style={{ width: `${percentage}%` }}
                         />
                       </div>
@@ -432,25 +441,25 @@ export default function DashboardPage() {
                 })}
             </div>
           ) : (
-            <div className="h-48 flex items-center justify-center text-gray-400">
+            <div className="h-48 flex items-center justify-center text-muted-foreground">
               <div className="text-center">
                 <div className="text-3xl mb-2">🌍</div>
                 <p className="text-sm">No location data</p>
               </div>
             </div>
           )}
-        </div>
+        </Card>
       </div>
 
       {/* Domain Info Card */}
       {selectedDomainData && (
-        <div className="bg-gradient-to-r from-primary-50 to-blue-50 border border-primary-200 rounded-lg p-6">
+        <Card className="p-6 bg-gradient-to-r from-primary/5 to-accent/5 border-primary/20">
           <div className="flex items-start justify-between">
             <div>
-              <h3 className="text-lg font-bold text-gray-900 mb-2">
+              <h3 className="text-lg font-bold mb-2">
                 📊 Tracking: {selectedDomainData.domain}
               </h3>
-              <div className="space-y-1 text-sm text-gray-600">
+              <div className="space-y-1 text-sm text-muted-foreground">
                 <p>• Status: {selectedDomainData.verified ? '✅ Verified' : '⏳ Pending Verification'}</p>
                 <p>• Rate Limit: {selectedDomainData.settings.rate_limit} requests/min</p>
                 <p>• IP Anonymization: {selectedDomainData.settings.anonymize_ip ? '✅ Enabled' : '❌ Disabled'}</p>
@@ -464,7 +473,7 @@ export default function DashboardPage() {
               Manage Domain
             </button>
           </div>
-        </div>
+        </Card>
       )}
     </div>
   );

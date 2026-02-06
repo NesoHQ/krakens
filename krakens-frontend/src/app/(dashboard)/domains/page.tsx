@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { getDomains, createDomain, deleteDomain } from '@/lib/api';
 import type { Domain } from '@/types';
+import { Card } from '@/components/ui/card';
 import EmptyState from '@/components/ui/EmptyState';
 import Alert from '@/components/ui/Alert';
 
@@ -70,8 +71,8 @@ export default function DomainsPage() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading domains...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading domains...</p>
         </div>
       </div>
     );
@@ -82,8 +83,8 @@ export default function DomainsPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-1">Domains</h1>
-          <p className="text-gray-600">Manage the websites you&apos;re tracking</p>
+          <h1 className="text-3xl font-bold mb-1">Domains</h1>
+          <p className="text-muted-foreground">Manage the websites you&apos;re tracking</p>
         </div>
         <button onClick={() => setShowModal(true)} className="btn btn-primary">
           + Add Domain
@@ -107,17 +108,17 @@ export default function DomainsPage() {
       )}
 
       {/* Info Card */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+      <Card className="p-4 bg-primary/5 border-primary/20">
         <div className="flex items-start space-x-3">
           <span className="text-2xl">💡</span>
           <div className="flex-1">
-            <h3 className="font-semibold text-blue-900 mb-1">What are domains?</h3>
-            <p className="text-sm text-blue-800">
+            <h3 className="font-semibold mb-1">What are domains?</h3>
+            <p className="text-sm text-muted-foreground">
               Domains are the websites you want to track. Add your website domain here, then generate an API key to start collecting analytics data.
             </p>
           </div>
         </div>
-      </div>
+      </Card>
 
       {/* Domains Grid */}
       {domains.length === 0 ? (
@@ -133,20 +134,20 @@ export default function DomainsPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {domains.map((domain) => (
-            <div key={domain.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+            <Card key={domain.id} className="p-6 hover:shadow-lg transition-shadow">
               <div className="flex justify-between items-start mb-4">
                 <div className="flex-1">
                   <div className="flex items-center space-x-2 mb-2">
-                    <h3 className="text-lg font-semibold text-gray-900">{domain.domain}</h3>
+                    <h3 className="text-lg font-semibold">{domain.domain}</h3>
                     {domain.verified && (
-                      <span className="text-green-600" title="Verified">✓</span>
+                      <span className="text-success" title="Verified">✓</span>
                     )}
                   </div>
                   <span
                     className={`inline-block px-2 py-1 text-xs rounded-full ${
                       domain.verified
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-yellow-100 text-yellow-800'
+                        ? 'bg-success/10 text-success'
+                        : 'bg-warning/10 text-warning'
                     }`}
                   >
                     {domain.verified ? '✓ Verified' : '⏳ Pending Verification'}
@@ -154,55 +155,53 @@ export default function DomainsPage() {
                 </div>
                 <button
                   onClick={() => handleDelete(domain.id, domain.domain)}
-                  className="text-red-600 hover:text-red-800 p-2"
+                  className="text-error hover:text-error/80 p-2"
                   title="Delete domain"
                 >
                   🗑️
                 </button>
               </div>
               
-              <div className="space-y-2 text-sm text-gray-600 bg-gray-50 rounded-lg p-3">
+              <div className="space-y-2 text-sm text-muted-foreground bg-muted/50 rounded-lg p-3">
                 <div className="flex justify-between">
                   <span>Rate Limit:</span>
-                  <span className="font-medium text-gray-900">{domain.settings.rate_limit}/min</span>
+                  <span className="font-medium text-foreground">{domain.settings.rate_limit}/min</span>
                 </div>
                 <div className="flex justify-between">
                   <span>IP Anonymization:</span>
-                  <span className="font-medium text-gray-900">
+                  <span className="font-medium text-foreground">
                     {domain.settings.anonymize_ip ? '✅ On' : '❌ Off'}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span>Timezone:</span>
-                  <span className="font-medium text-gray-900">{domain.settings.timezone}</span>
+                  <span className="font-medium text-foreground">{domain.settings.timezone}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Session Timeout:</span>
-                  <span className="font-medium text-gray-900">{domain.settings.session_timeout}s</span>
+                  <span className="font-medium text-foreground">{domain.settings.session_timeout}s</span>
                 </div>
               </div>
 
-              <div className="mt-4 text-xs text-gray-500">
+              <div className="mt-4 text-xs text-muted-foreground">
                 Added {new Date(domain.created_at).toLocaleDateString()}
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       )}
 
       {/* Add Domain Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Add New Domain</h2>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <Card className="p-6 max-w-md w-full">
+            <h2 className="text-2xl font-bold mb-4">Add New Domain</h2>
             <form onSubmit={handleCreate}>
               {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
-                  {error}
-                </div>
+                <Alert type="error" message={error} />
               )}
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium mb-2">
                   Domain Name
                 </label>
                 <input
@@ -214,16 +213,16 @@ export default function DomainsPage() {
                   required
                   autoFocus
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   Enter your domain without http:// or https:// (e.g., example.com or localhost)
                 </p>
               </div>
               
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-                <p className="text-xs text-blue-800">
+              <Card className="p-3 mb-4 bg-primary/5 border-primary/20">
+                <p className="text-xs text-muted-foreground">
                   <strong>Next steps:</strong> After adding your domain, generate an API key and install the tracking code on your website.
                 </p>
-              </div>
+              </Card>
 
               <div className="flex space-x-3">
                 <button type="submit" className="btn btn-primary flex-1">
@@ -241,7 +240,7 @@ export default function DomainsPage() {
                 </button>
               </div>
             </form>
-          </div>
+          </Card>
         </div>
       )}
     </div>

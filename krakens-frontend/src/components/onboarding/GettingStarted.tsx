@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Card } from '@/components/ui/card';
 
 interface Step {
   id: number;
@@ -55,32 +56,32 @@ export default function GettingStarted({ hasDomains, hasAPIKeys, hasTrackedEvent
   if (dismissed || allCompleted) return null;
 
   return (
-    <div className="bg-gradient-to-r from-primary-50 to-blue-50 border border-primary-200 rounded-lg p-6 mb-6">
+    <Card className="p-6 mb-6 bg-gradient-to-r from-primary/5 to-accent/5 border-primary/20">
       <div className="flex items-start justify-between mb-4">
         <div>
-          <h3 className="text-lg font-bold text-gray-900 mb-1">
+          <h3 className="text-lg font-bold mb-1">
             🚀 Getting Started with Krakens
           </h3>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-muted-foreground">
             Complete these steps to start tracking your website analytics
           </p>
         </div>
         <button
           onClick={() => setDismissed(true)}
-          className="text-gray-400 hover:text-gray-600"
+          className="text-muted-foreground hover:text-foreground"
         >
           ×
         </button>
       </div>
 
       <div className="mb-4">
-        <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
+        <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
           <span>Progress</span>
           <span className="font-medium">{completedSteps} of {steps.length} completed</span>
         </div>
-        <div className="w-full bg-gray-200 rounded-full h-2">
+        <div className="w-full bg-muted rounded-full h-2">
           <div
-            className="bg-primary-600 h-2 rounded-full transition-all duration-500"
+            className="bg-primary h-2 rounded-full transition-all duration-500"
             style={{ width: `${(completedSteps / steps.length) * 100}%` }}
           />
         </div>
@@ -92,23 +93,23 @@ export default function GettingStarted({ hasDomains, hasAPIKeys, hasTrackedEvent
             key={step.id}
             className={`flex items-center justify-between p-4 rounded-lg ${
               step.completed
-                ? 'bg-green-50 border border-green-200'
-                : 'bg-white border border-gray-200'
+                ? 'bg-success/10 border border-success/20'
+                : 'bg-card border border-border'
             }`}
           >
             <div className="flex items-center space-x-4">
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
                   step.completed
-                    ? 'bg-green-500 text-white'
-                    : 'bg-gray-200 text-gray-600'
+                    ? 'bg-success text-success-foreground'
+                    : 'bg-muted text-muted-foreground'
                 }`}
               >
                 {step.completed ? '✓' : step.id}
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900">{step.title}</h4>
-                <p className="text-sm text-gray-600">{step.description}</p>
+                <h4 className="font-semibold">{step.title}</h4>
+                <p className="text-sm text-muted-foreground">{step.description}</p>
               </div>
             </div>
             {!step.completed && (
@@ -122,6 +123,6 @@ export default function GettingStarted({ hasDomains, hasAPIKeys, hasTrackedEvent
           </div>
         ))}
       </div>
-    </div>
+    </Card>
   );
 }

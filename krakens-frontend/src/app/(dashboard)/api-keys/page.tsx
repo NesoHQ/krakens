@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { getAPIKeys, createAPIKey, revokeAPIKey, getDomains } from '@/lib/api';
 import type { APIKey, Domain } from '@/types';
+import { Card } from '@/components/ui/card';
 import EmptyState from '@/components/ui/EmptyState';
 import Alert from '@/components/ui/Alert';
 
@@ -88,8 +89,8 @@ export default function APIKeysPage() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading API keys...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading API keys...</p>
         </div>
       </div>
     );
@@ -100,8 +101,8 @@ export default function APIKeysPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-1">API Keys</h1>
-          <p className="text-gray-600">Manage authentication keys for tracking</p>
+          <h1 className="text-3xl font-bold mb-1">API Keys</h1>
+          <p className="text-muted-foreground">Manage authentication keys for tracking</p>
         </div>
         <div className="flex space-x-3">
           <button onClick={() => setShowInstallModal(true)} className="btn btn-secondary">
@@ -143,38 +144,38 @@ export default function APIKeysPage() {
       )}
 
       {/* Info Card */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+      <Card className="p-4 bg-primary/5 border-primary/20">
         <div className="flex items-start space-x-3">
           <span className="text-2xl">🔑</span>
           <div className="flex-1">
-            <h3 className="font-semibold text-blue-900 mb-1">What are API keys?</h3>
-            <p className="text-sm text-blue-800">
+            <h3 className="font-semibold mb-1">What are API keys?</h3>
+            <p className="text-sm text-muted-foreground">
               API keys authenticate tracking requests from your website. Generate a key, add it to your website&apos;s code, and start collecting analytics data. Keep your keys secure!
             </p>
           </div>
         </div>
-      </div>
+      </Card>
 
       {/* Newly Created Key Display */}
       {newlyCreatedKey && (
-        <div className="bg-green-50 border-2 border-green-300 rounded-lg p-6">
+        <Card className="p-6 bg-success/5 border-2 border-success/30">
           <div className="flex items-start justify-between mb-4">
             <div>
-              <h3 className="text-lg font-bold text-green-900 mb-1">✅ API Key Created!</h3>
-              <p className="text-sm text-green-800">
+              <h3 className="text-lg font-bold mb-1">✅ API Key Created!</h3>
+              <p className="text-sm text-muted-foreground">
                 Copy this key now - you won&apos;t be able to see it again for security reasons.
               </p>
             </div>
             <button
               onClick={() => setNewlyCreatedKey('')}
-              className="text-green-600 hover:text-green-800"
+              className="text-muted-foreground hover:text-foreground"
             >
               ×
             </button>
           </div>
-          <div className="bg-white border border-green-200 rounded-lg p-4 mb-4">
-            <code className="text-sm font-mono text-gray-900 break-all">{newlyCreatedKey}</code>
-          </div>
+          <Card className="p-4 mb-4 bg-card">
+            <code className="text-sm font-mono break-all">{newlyCreatedKey}</code>
+          </Card>
           <div className="flex space-x-3">
             <button
               onClick={() => copyToClipboard(newlyCreatedKey)}
@@ -191,7 +192,7 @@ export default function APIKeysPage() {
               📋 Copy Installation Code
             </button>
           </div>
-        </div>
+        </Card>
       )}
 
       {/* API Keys List */}
@@ -208,22 +209,22 @@ export default function APIKeysPage() {
       ) : (
         <div className="space-y-4">
           {apiKeys.map((key) => (
-            <div key={key.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+            <Card key={key.id} className="p-6 hover:shadow-lg transition-shadow">
               <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                 <div className="flex-1">
                   <div className="flex items-center space-x-3 mb-3">
-                    <code className="bg-gray-100 px-4 py-2 rounded-lg text-sm font-mono text-gray-900 break-all flex-1">
+                    <code className="bg-muted px-4 py-2 rounded-lg text-sm font-mono flex-1 break-all">
                       {key.key}
                     </code>
                     <button
                       onClick={() => copyToClipboard(key.key)}
-                      className="text-primary-600 hover:text-primary-700 px-3 py-2 rounded-lg hover:bg-primary-50 transition-colors"
+                      className="text-primary hover:text-primary/80 px-3 py-2 rounded-lg hover:bg-primary/10 transition-colors"
                       title="Copy to clipboard"
                     >
                       📋
                     </button>
                   </div>
-                  <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+                  <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
                     <div>
                       <span className="font-medium">Created:</span> {new Date(key.created_at).toLocaleDateString()}
                     </div>
@@ -232,7 +233,7 @@ export default function APIKeysPage() {
                     </div>
                     <div>
                       <span className="font-medium">Status:</span>{' '}
-                      <span className={key.revoked ? 'text-red-600' : 'text-green-600'}>
+                      <span className={key.revoked ? 'text-error' : 'text-success'}>
                         {key.revoked ? '❌ Revoked' : '✅ Active'}
                       </span>
                     </div>
@@ -249,36 +250,34 @@ export default function APIKeysPage() {
                   </button>
                   <button
                     onClick={() => handleRevoke(key.id)}
-                    className="text-red-600 hover:text-red-800 px-3 py-2 rounded-lg hover:bg-red-50 transition-colors"
+                    className="text-error hover:text-error/80 px-3 py-2 rounded-lg hover:bg-error/10 transition-colors"
                     disabled={key.revoked}
                   >
                     {key.revoked ? 'Revoked' : '🗑️ Revoke'}
                   </button>
                 </div>
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       )}
 
       {/* Generate API Key Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Generate API Key</h2>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <Card className="p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <h2 className="text-2xl font-bold mb-4">Generate API Key</h2>
             <form onSubmit={handleCreate}>
               {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
-                  {error}
-                </div>
+                <Alert type="error" message={error} />
               )}
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium mb-2">
                   Select Domains
                 </label>
-                <div className="space-y-2 max-h-48 overflow-y-auto border border-gray-200 rounded-lg p-3">
+                <div className="space-y-2 max-h-48 overflow-y-auto border border-border rounded-lg p-3">
                   {domains.map((domain) => (
-                    <label key={domain.id} className="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                    <label key={domain.id} className="flex items-center p-2 hover:bg-muted/50 rounded cursor-pointer">
                       <input
                         type="checkbox"
                         checked={selectedDomains.includes(domain.id)}
@@ -289,14 +288,14 @@ export default function APIKeysPage() {
                             setSelectedDomains(selectedDomains.filter((id) => id !== domain.id));
                           }
                         }}
-                        className="mr-3 h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                        className="mr-3 h-4 w-4 text-primary focus:ring-primary border-border rounded"
                       />
                       <span className="text-sm flex-1">{domain.domain}</span>
-                      {domain.verified && <span className="text-green-600 text-xs">✓</span>}
+                      {domain.verified && <span className="text-success text-xs">✓</span>}
                     </label>
                   ))}
                 </div>
-                <p className="text-xs text-gray-500 mt-2">
+                <p className="text-xs text-muted-foreground mt-2">
                   Select which domains this API key can track
                 </p>
               </div>
@@ -316,19 +315,19 @@ export default function APIKeysPage() {
                 </button>
               </div>
             </form>
-          </div>
+          </Card>
         </div>
       )}
 
       {/* Installation Guide Modal */}
       {showInstallModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <Card className="p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-bold text-gray-900">Installation Guide</h2>
+              <h2 className="text-2xl font-bold">Installation Guide</h2>
               <button
                 onClick={() => setShowInstallModal(false)}
-                className="text-gray-400 hover:text-gray-600 text-2xl"
+                className="text-muted-foreground hover:text-foreground text-2xl"
               >
                 ×
               </button>
@@ -336,42 +335,42 @@ export default function APIKeysPage() {
 
             <div className="space-y-6">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Step 1: Generate API Key</h3>
-                <p className="text-sm text-gray-600 mb-2">
+                <h3 className="text-lg font-semibold mb-2">Step 1: Generate API Key</h3>
+                <p className="text-sm text-muted-foreground mb-2">
                   Click &quot;Generate API Key&quot; above and select your domain(s).
                 </p>
               </div>
 
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Step 2: Add Tracking Code</h3>
-                <p className="text-sm text-gray-600 mb-2">
-                  Add this code to your website&apos;s <code className="bg-gray-100 px-1 rounded">&lt;head&gt;</code> section:
+                <h3 className="text-lg font-semibold mb-2">Step 2: Add Tracking Code</h3>
+                <p className="text-sm text-muted-foreground mb-2">
+                  Add this code to your website&apos;s <code className="bg-muted px-1 rounded">&lt;head&gt;</code> section:
                 </p>
-                <div className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto">
+                <Card className="bg-gray-900 text-gray-100 p-4 overflow-x-auto">
                   <pre className="text-sm"><code>{`<!-- Krakens Analytics -->
 <script src="http://localhost:3000/krakens.js"></script>
 <script>
   Krakens.init('YOUR_API_KEY_HERE');
 </script>`}</code></pre>
-                </div>
+                </Card>
               </div>
 
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Step 3: Verify Installation</h3>
-                <p className="text-sm text-gray-600 mb-2">
+                <h3 className="text-lg font-semibold mb-2">Step 3: Verify Installation</h3>
+                <p className="text-sm text-muted-foreground mb-2">
                   Visit your website and check the dashboard - you should see real-time visitors appear within seconds!
                 </p>
               </div>
 
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h4 className="font-semibold text-blue-900 mb-2">💡 Pro Tips</h4>
-                <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
+              <Card className="p-4 bg-primary/5 border-primary/20">
+                <h4 className="font-semibold mb-2">💡 Pro Tips</h4>
+                <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
                   <li>The tracking script is less than 5KB and won&apos;t slow down your site</li>
                   <li>It automatically tracks page views and navigation</li>
                   <li>Works with single-page applications (React, Vue, etc.)</li>
                   <li>Respects user privacy with IP anonymization</li>
                 </ul>
-              </div>
+              </Card>
             </div>
 
             <div className="mt-6">
@@ -382,7 +381,7 @@ export default function APIKeysPage() {
                 Got it!
               </button>
             </div>
-          </div>
+          </Card>
         </div>
       )}
     </div>

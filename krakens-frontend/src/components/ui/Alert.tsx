@@ -7,10 +7,10 @@ interface AlertProps {
 
 export default function Alert({ type, title, message, onClose }: AlertProps) {
   const styles = {
-    info: 'bg-blue-50 border-blue-200 text-blue-800',
-    success: 'bg-green-50 border-green-200 text-green-800',
-    warning: 'bg-yellow-50 border-yellow-200 text-yellow-800',
-    error: 'bg-red-50 border-red-200 text-red-800',
+    info: 'bg-primary/5 border-primary/20 text-foreground',
+    success: 'bg-success/5 border-success/20 text-foreground',
+    warning: 'bg-warning/5 border-warning/20 text-foreground',
+    error: 'bg-error/5 border-error/20 text-foreground',
   };
 
   const icons = {
@@ -34,7 +34,7 @@ export default function Alert({ type, title, message, onClose }: AlertProps) {
         <span className="text-2xl mr-3">{icons[type]}</span>
         <div className="flex-1">
           {title && <h4 className="font-semibold mb-1">{title}</h4>}
-          <p className="text-sm">{message}</p>
+          <p className="text-sm text-muted-foreground">{message}</p>
         </div>
       </div>
     </div>

@@ -6,10 +6,10 @@ interface StatCardProps {
     value: number;
     isPositive: boolean;
   };
-  subtitle?: string;
+  description?: string;
 }
 
-export default function StatCard({ title, value, icon, trend, subtitle }: StatCardProps) {
+export default function StatCard({ title, value, icon, trend, description }: StatCardProps) {
   return (
     <div className="group relative">
       {/* Gradient Border Effect */}
@@ -28,8 +28,8 @@ export default function StatCard({ title, value, icon, trend, subtitle }: StatCa
                 </span>
               )}
             </div>
-            {subtitle && (
-              <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
+            {description && (
+              <p className="text-xs text-muted-foreground mt-1">{description}</p>
             )}
           </div>
           
