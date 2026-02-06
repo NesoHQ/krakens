@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Herodotus Tracking Test</title>
+  <title>Krakens Tracking Test</title>
   
-<!-- Herodotus Analytics -->
-<script src="http://localhost:3000/herodotus.js"></script>
+<!-- Krakens Analytics -->
+<script src="http://localhost:3000/krakens.js"></script>
 <script>
-  Herodotus.init('hrd_6610051b6cd4811a523ac7705f34546c86af9797cfb638fe8f0fc05658353ac5');
+  Krakens.init('hrd_6610051b6cd4811a523ac7705f34546c86af9797cfb638fe8f0fc05658353ac5');
 </script>
   
   <style>
@@ -49,11 +49,11 @@
 </head>
 <body>
   <div class="card">
-    <h1>🧪 Herodotus Tracking Test Page</h1>
+    <h1>🧪 Krakens Tracking Test Page</h1>
     
     <div class="status">
       <strong>✅ Tracking Active</strong><br>
-      This page is now being tracked by Herodotus Analytics.
+      This page is now being tracked by Krakens Analytics.
     </div>
     
     <h2>What's being tracked?</h2>
@@ -73,11 +73,11 @@
     <div class="info">
       <strong>How to verify:</strong>
       <ol>
-        <li>Make sure your Herodotus backend is running (port 8080)</li>
-        <li>Make sure your Herodotus frontend is running (port 3000)</li>
+        <li>Make sure your Krakens backend is running (port 8080)</li>
+        <li>Make sure your Krakens frontend is running (port 3000)</li>
         <li>Replace 'YOUR_API_KEY_HERE' in the code above with your actual API key</li>
         <li>Open this file in your browser</li>
-        <li>Check your Herodotus dashboard - you should see this visit appear!</li>
+        <li>Check your Krakens dashboard - you should see this visit appear!</li>
         <li>Open browser DevTools Console (F12) to see any tracking errors</li>
       </ol>
     </div>
@@ -86,16 +86,16 @@
   <script>
     function simulateNavigation(path) {
       console.log('Simulating navigation to:', path);
-      // If Herodotus has a track method, you could call it here
-      if (window.Herodotus && window.Herodotus.track) {
-        window.Herodotus.track('pageview', { path: path });
+      // If Krakens has a track method, you could call it here
+      if (window.Krakens && window.Krakens.track) {
+        window.Krakens.track('pageview', { path: path });
       }
       alert('Navigation to ' + path + ' tracked!');
     }
     
     // Log when tracking initializes
-    console.log('Herodotus tracking test page loaded');
-    console.log('Herodotus object:', window.Herodotus);
+    console.log('Krakens tracking test page loaded');
+    console.log('Krakens object:', window.Krakens);
   </script>
 </body>
 </html>

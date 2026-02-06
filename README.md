@@ -1,10 +1,10 @@
-# Herodotus Analytics
+# Krakens Analytics
 
 Real-time web analytics platform with privacy-first approach. Built with Go and Next.js.
 
 ## Overview
 
-Herodotus is a lightweight, self-hosted analytics solution that provides real-time insights into website traffic without compromising user privacy.
+Krakens is a lightweight, self-hosted analytics solution that provides real-time insights into website traffic without compromising user privacy.
 
 **Key Features:**
 - Real-time visitor tracking and analytics
@@ -52,17 +52,17 @@ Herodotus is a lightweight, self-hosted analytics solution that provides real-ti
 
 ```bash
 # Clone repository
-git clone https://github.com/nesohq/herodotus.git
-cd herodotus
+git clone https://github.com/nesohq/krakens.git
+cd krakens
 
 # Start backend
-cd herodotus-backend
+cd krakens-backend
 docker-compose up -d  # Start dependencies
 cp .env.example .env
 make dev
 
 # Start frontend (new terminal)
-cd herodotus-frontend
+cd krakens-frontend
 cp .env.example .env.local
 npm install && npm run dev
 ```
@@ -77,8 +77,8 @@ Images are automatically built and published to GitHub Container Registry:
 
 ```bash
 # Pull images
-docker pull ghcr.io/nesohq/herodotus/backend:latest
-docker pull ghcr.io/nesohq/herodotus/frontend:latest
+docker pull ghcr.io/nesohq/krakens/backend:latest
+docker pull ghcr.io/nesohq/krakens/frontend:latest
 ```
 
 ### Kubernetes
@@ -106,9 +106,9 @@ Deploy using your own manifests. Required environment variables:
 4. **Install tracking script** on your website:
 
 ```html
-<script src="https://your-domain.com/herodotus.js"></script>
+<script src="https://your-domain.com/krakens.js"></script>
 <script>
-  Herodotus.init('YOUR_API_KEY');
+  Krakens.init('YOUR_API_KEY');
 </script>
 ```
 
@@ -138,9 +138,9 @@ Header: Authorization: Bearer <token>
 ## Project Structure
 
 ```
-herodotus/
-├── herodotus-backend/    # Go backend service
-├── herodotus-frontend/   # Next.js frontend
+krakens/
+├── krakens-backend/    # Go backend service
+├── krakens-frontend/   # Next.js frontend
 └── .github/workflows/    # CI/CD pipelines
 ```
 
@@ -166,9 +166,9 @@ MIT License - see [LICENSE](./LICENSE) file for details.
 
 ## Support
 
-- **Issues:** [GitHub Issues](https://github.com/nesohq/herodotus/issues)
+- **Issues:** [GitHub Issues](https://github.com/nesohq/krakens/issues)
 - **Documentation:** See README files in backend/frontend directories
-- **Email:** support@herodotus.io
+- **Email:** support@krakens.io
 
 ---
 
