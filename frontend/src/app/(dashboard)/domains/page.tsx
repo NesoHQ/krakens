@@ -36,10 +36,10 @@ export default function DomainsPage() {
     setError('');
     setSuccess('');
 
-    // Validate domain format (allow localhost for testing)
-    const domainRegex = /^([a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9]?\.[a-zA-Z]{2,}|localhost)$/;
+    // Validate domain format (allow subdomains and localhost for testing)
+    const domainRegex = /^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)*[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.[a-zA-Z]{2,}$|^localhost$/;
     if (!domainRegex.test(newDomain)) {
-      setError('Please enter a valid domain name (e.g., example.com or localhost)');
+      setError('Please enter a valid domain name (e.g., example.com, subdomain.example.com, or localhost)');
       return;
     }
 
@@ -210,14 +210,14 @@ export default function DomainsPage() {
                 <input
                   type="text"
                   className="input"
-                  placeholder="example.com"
+                  placeholder="example.com or subdomain.example.com"
                   value={newDomain}
                   onChange={(e) => setNewDomain(e.target.value)}
                   required
                   autoFocus
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Enter your domain without http:// or https:// (e.g., example.com or localhost)
+                  Enter your domain without http:// or https:// (e.g., example.com, subdomain.example.com, or localhost)
                 </p>
               </div>
               
