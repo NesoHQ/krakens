@@ -37,11 +37,11 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen flex w-full bg-background">
+    <div className="h-screen flex w-full bg-background overflow-hidden">
       <DashboardSidebar />
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col h-screen overflow-hidden">
         <DashboardHeader />
-        <main className="flex-1 p-6 space-y-6">
+        <main className="flex-1 overflow-y-auto p-6 space-y-6">
           {children}
         </main>
       </div>

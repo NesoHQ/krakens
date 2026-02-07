@@ -1,8 +1,9 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, Globe, Key, LogOut, Zap } from 'lucide-react';
+import { LayoutDashboard, Globe, Key, LogOut, Zap, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
@@ -11,6 +12,7 @@ export default function DashboardSidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuthStore();
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const menuItems = [
     {
@@ -41,44 +43,72 @@ export default function DashboardSidebar() {
   };
 
   return (
-    <aside className="w-64 border-r bg-card flex flex-col">
+    <aside 
+      className={cn(
+        "border-r bg-card flex flex-col transition-all duration-300 sticky top-0 h-screen",
+        isCollapsed ? "w-20" : "w-64"
+      )}
+    >
       {/* Header */}
-      <div className="border-b px-6 py-5">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center shadow-lg">
+      <div className="border-b px-6 py-5 relative">
+        <div className={cn(
+          "flex items-center transition-all duration-300",
+          isCollapsed ? "justify-center" : "gap-3"
+        )}>
+          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center shadow-lg flex-shrink-0">
             <Zap className="h-5 w-5 text-white" />
           </div>
-          <div>
-            <h2 className="font-bold text-base">Krakens</h2>
-            <p className="text-xs text-muted-foreground">Analytics Platform</p>
-          </div>
+          {!isCollapsed && (
+            <div className="overflow-hidden">
+              <h2 className="font-bold text-base whitespace-nowrap">Krakens</h2>
+              <p className="text-xs text-muted-foreground whitespace-nowrap">Analytics Platform</p>
+            </div>
+          )}
         </div>
+        
+        {/* Toggle Button */}
+        <button
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className="absolute -right-3 top-1/2 -translate-y-1/2 h-6 w-6 rounded-full border bg-card shadow-md flex items-center justify-center hover:bg-muted transition-colors"
+        >
+          {isCollapsed ? (
+            <ChevronRight className="h-4 w-4" />
+          ) : (
+            <ChevronLeft className="h-4 w-4" />
+          )}
+        </button>
       </div>
 
       {/* Navigation */}
-      <div className="flex-1 px-3 py-4">
+      <div className="flex-1 px-3 py-4 overflow-y-auto">
         <div className="space-y-1">
-          <p className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-            Main Menu
-          </p>
+          {!isCollapsed && (
+            <p className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+              Main Menu
+            </p>
+          )}
           {menuItems.map((item) => (
             <Link
               key={item.url}
               href={item.url}
               className={cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all group',
+                'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all group relative',
                 isActive(item.url)
                   ? 'bg-primary text-primary-foreground'
-                  : 'hover:bg-muted text-muted-foreground hover:text-foreground'
+                  : 'hover:bg-muted text-muted-foreground hover:text-foreground',
+                isCollapsed && 'justify-center'
               )}
+              title={isCollapsed ? item.title : undefined}
             >
               <item.icon
                 className={cn(
-                  'h-5 w-5 transition-transform group-hover:scale-110',
+                  'h-5 w-5 transition-transform group-hover:scale-110 flex-shrink-0',
                   isActive(item.url) ? 'text-primary-foreground' : ''
                 )}
               />
-              <span className="font-medium text-sm">{item.title}</span>
+              {!isCollapsed && (
+                <span className="font-medium text-sm whitespace-nowrap">{item.title}</span>
+              )}
             </Link>
           ))}
         </div>
@@ -86,25 +116,34 @@ export default function DashboardSidebar() {
 
       {/* Footer */}
       <div className="border-t p-4 space-y-2">
-        <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-muted/50">
+        <div className={cn(
+          "flex items-center gap-3 px-3 py-2.5 rounded-lg bg-muted/50",
+          isCollapsed && "justify-center px-0"
+        )}>
           <div className="h-9 w-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0">
             <span className="text-white font-semibold text-sm">
               {user?.email?.[0]?.toUpperCase() || 'U'}
             </span>
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold truncate">{user?.email || 'User'}</p>
-            <p className="text-xs text-muted-foreground truncate">Account</p>
-          </div>
+          {!isCollapsed && (
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold truncate">{user?.email || 'User'}</p>
+              <p className="text-xs text-muted-foreground truncate">Account</p>
+            </div>
+          )}
         </div>
 
         <Button
           variant="ghost"
-          className="w-full justify-start text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+          className={cn(
+            "w-full text-muted-foreground hover:text-destructive hover:bg-destructive/10",
+            isCollapsed ? "justify-center px-0" : "justify-start"
+          )}
           onClick={handleLogout}
+          title={isCollapsed ? "Logout" : undefined}
         >
-          <LogOut className="h-4 w-4 mr-2" />
-          <span className="text-sm font-medium">Logout</span>
+          <LogOut className="h-4 w-4" />
+          {!isCollapsed && <span className="text-sm font-medium ml-2">Logout</span>}
         </Button>
       </div>
     </aside>
