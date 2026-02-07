@@ -89,3 +89,15 @@ func (h *DomainHandler) Delete(c *gin.Context) {
 
 	c.JSON(http.StatusNoContent, nil)
 }
+
+func (h *DomainHandler) Verify(c *gin.Context) {
+	id, _ := primitive.ObjectIDFromHex(c.Param("id"))
+
+	d, err := h.domainService.Verify(c.Request.Context(), id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, d)
+}

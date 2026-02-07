@@ -22,7 +22,7 @@ func (s *DomainService) Create(ctx context.Context, userID primitive.ObjectID, r
 	d := &domain.Domain{
 		UserID:   userID,
 		Domain:   req.Domain,
-		Verified: false,
+		Verified: true, // Auto-verify domains
 		Settings: domain.DomainSettings{
 			AnonymizeIP:      true,
 			RateLimit:        1000,
@@ -64,4 +64,19 @@ func (s *DomainService) Update(ctx context.Context, id primitive.ObjectID, req *
 
 func (s *DomainService) Delete(ctx context.Context, id primitive.ObjectID) error {
 	return s.domainRepo.Delete(ctx, id)
+}
+
+func (s *DomainService) Verify(ctx context.Context, id primitive.ObjectID) (*domain.Domain, error) {
+	d, err := s.domainRepo.FindByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	d.Verified = true
+
+	if err := s.domainRepo.Update(ctx, d); err != nil {
+		return nil, err
+	}
+
+	return d, nil
 }

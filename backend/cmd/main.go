@@ -103,6 +103,7 @@ func main() {
 		protected.POST("/domains", domainHandler.Create)
 		protected.GET("/domains/:id", domainHandler.GetByID)
 		protected.PUT("/domains/:id", domainHandler.Update)
+		protected.POST("/domains/:id/verify", domainHandler.Verify)
 		protected.DELETE("/domains/:id", domainHandler.Delete)
 
 		// API Keys
