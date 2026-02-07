@@ -203,6 +203,7 @@ export default function APIKeysPage() {
       ) : (
         <APIKeysTable
           apiKeys={apiKeys}
+          domains={domains}
           onCopy={copyToClipboard}
           onViewInstructions={handleViewInstructions}
           onRevoke={handleRevoke}

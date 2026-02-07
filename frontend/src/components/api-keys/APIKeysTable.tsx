@@ -1,10 +1,11 @@
 'use client';
 
 import { Card } from '@/components/ui/card';
-import type { APIKey } from '@/types';
+import type { APIKey, Domain } from '@/types';
 
 interface APIKeysTableProps {
   apiKeys: APIKey[];
+  domains: Domain[];
   onCopy: (text: string) => void;
   onViewInstructions: (key: APIKey) => void;
   onRevoke: (id: string) => void;
@@ -12,10 +13,18 @@ interface APIKeysTableProps {
 
 export default function APIKeysTable({
   apiKeys,
+  domains,
   onCopy,
   onViewInstructions,
   onRevoke,
 }: APIKeysTableProps) {
+  const getDomainNames = (domainIds: string[]) => {
+    return domainIds
+      .map(id => domains.find(d => d.id === id)?.domain)
+      .filter(Boolean)
+      .join(', ');
+  };
+
   return (
     <Card className="overflow-hidden">
       <div className="overflow-x-auto">
@@ -47,9 +56,22 @@ export default function APIKeysTable({
                   </div>
                 </td>
                 <td className="py-4 px-6">
-                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
-                    {key.domain_ids.length} {key.domain_ids.length === 1 ? 'domain' : 'domains'}
-                  </span>
+                  <div className="flex flex-col space-y-1">
+                    <div className="flex flex-wrap gap-1">
+                      {key.domain_ids.map(domainId => {
+                        const domain = domains.find(d => d.id === domainId);
+                        return domain ? (
+                          <span
+                            key={domainId}
+                            className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary"
+                          >
+                            {domain.domain}
+                            {domain.verified && <span className="ml-1">✓</span>}
+                          </span>
+                        ) : null;
+                      })}
+                    </div>
+                  </div>
                 </td>
                 <td className="py-4 px-6 text-sm text-muted-foreground">
                   {new Date(key.created_at).toLocaleDateString('en-US', {
