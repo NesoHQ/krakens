@@ -5,6 +5,8 @@ import { getAPIKeys, createAPIKey, revokeAPIKey, getDomains } from '@/lib/api';
 import type { APIKey, Domain } from '@/types';
 import EmptyState from '@/components/ui/EmptyState';
 import Alert from '@/components/ui/Alert';
+import Toast from '@/components/ui/Toast';
+import { useToast } from '@/hooks/useToast';
 
 // API Keys Components
 import APIKeysTable from '@/components/api-keys/APIKeysTable';
@@ -19,7 +21,6 @@ function useAPIKeys() {
   const [domains, setDomains] = useState<Domain[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
 
   const loadData = async () => {
     try {
@@ -37,7 +38,6 @@ function useAPIKeys() {
 
   const handleCreateKey = async (domainIds: string[]) => {
     const { data } = await createAPIKey(domainIds);
-    setSuccess('API key generated successfully! Make sure to copy it now - you won\'t be able to see it again.');
     await loadData();
     return data.key;
   };
@@ -49,18 +49,13 @@ function useAPIKeys() {
 
     try {
       await revokeAPIKey(id);
-      setSuccess('API key revoked successfully');
       await loadData();
+      return true;
     } catch (error) {
       console.error('Failed to revoke API key:', error);
       setError('Failed to revoke API key');
+      return false;
     }
-  };
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setSuccess('Copied to clipboard!');
-    setTimeout(() => setSuccess(''), 2000);
   };
 
   useEffect(() => {
@@ -72,12 +67,9 @@ function useAPIKeys() {
     domains,
     loading,
     error,
-    success,
     setError,
-    setSuccess,
     handleCreateKey,
     handleRevokeKey,
-    copyToClipboard,
   };
 }
 
@@ -87,13 +79,12 @@ export default function APIKeysPage() {
     domains,
     loading,
     error,
-    success,
     setError,
-    setSuccess,
     handleCreateKey,
     handleRevokeKey,
-    copyToClipboard,
   } = useAPIKeys();
+
+  const toast = useToast();
 
   const [showModal, setShowModal] = useState(false);
   const [showInstructionsModal, setShowInstructionsModal] = useState(false);
@@ -111,15 +102,28 @@ export default function APIKeysPage() {
 </script>`;
   };
 
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success('Copied to clipboard!');
+  };
+
   const handleGenerate = async (domainIds: string[]) => {
     const key = await handleCreateKey(domainIds);
     setNewlyCreatedKey(key);
     setShowModal(false);
+    toast.success('API key generated successfully!');
   };
 
   const handleViewInstructions = (key: APIKey) => {
     setSelectedKeyForInstructions(key);
     setShowInstructionsModal(true);
+  };
+
+  const handleRevoke = async (id: string) => {
+    const success = await handleRevokeKey(id);
+    if (success) {
+      toast.success('API key revoked successfully');
+    }
   };
 
   if (loading) {
@@ -151,8 +155,17 @@ export default function APIKeysPage() {
       </div>
 
       {/* Alerts */}
-      {success && <Alert type="success" message={success} onClose={() => setSuccess('')} />}
       {error && <Alert type="error" message={error} onClose={() => setError('')} />}
+
+      {/* Toasts */}
+      {toast.toasts.map((t) => (
+        <Toast
+          key={t.id}
+          message={t.message}
+          type={t.type}
+          onClose={() => toast.hideToast(t.id)}
+        />
+      ))}
 
       {/* No Domains Warning */}
       {domains.length === 0 && (
@@ -192,7 +205,7 @@ export default function APIKeysPage() {
           apiKeys={apiKeys}
           onCopy={copyToClipboard}
           onViewInstructions={handleViewInstructions}
-          onRevoke={handleRevokeKey}
+          onRevoke={handleRevoke}
         />
       )}
 
