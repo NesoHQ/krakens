@@ -92,3 +92,19 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: 🚀 Trigger Infrastructure Staging Deployment
+        if: success() && github.ref == 'refs/heads/main'
+        run: |
+          curl -X POST \
+            -H "Authorization: token ${{ secrets.INFRA_REPO_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/opskraken/nesohq-infra/dispatches \
+            -d '{"event_type":"deploy-staging"}'
+
+      - name: 🎉 Deployment triggered
+        if: success() && github.ref == 'refs/heads/main'
+        run: |
+          echo "✅ Backend image built and pushed successfully!"
+          echo "🚀 Infrastructure deployment triggered for staging environment"
+          echo "📦 Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"

@@ -24,6 +24,21 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     if (typeof window !== 'undefined') {
+      // Try to get token from Zustand persist store first
+      const authStore = localStorage.getItem('krakens-auth');
+      if (authStore) {
+        try {
+          const { state } = JSON.parse(authStore);
+          if (state?.token) {
+            config.headers.Authorization = `Bearer ${state.token}`;
+            return config;
+          }
+        } catch (e) {
+          // Fall through to legacy token check
+        }
+      }
+      
+      // Fallback to legacy token storage
       const token = localStorage.getItem('token');
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
@@ -41,7 +56,9 @@ api.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
     if (error.response?.status === 401 && typeof window !== 'undefined') {
+      // Clear both storage locations
       localStorage.removeItem('token');
+      localStorage.removeItem('krakens-auth');
       window.location.href = '/login';
     }
     return Promise.reject(error);
