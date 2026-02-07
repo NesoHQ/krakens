@@ -21,12 +21,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Create Release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
+          generate_release_notes: true
           draft: false
           prerelease: false
 
@@ -95,8 +92,8 @@ jobs:
           context: ./frontend
           push: true
           build-args: |
-            NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL || 'https://api.krakens.nesohq.org' }}
-            NEXT_PUBLIC_FRONTEND_URL: ${{ secrets.NEXT_PUBLIC_FRONTEND_URL || 'https://krakens.nesohq.org' }}
+            NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL || 'https://api.krakens.nesohq.org' }}
+            NEXT_PUBLIC_FRONTEND_URL=${{ secrets.NEXT_PUBLIC_FRONTEND_URL || 'https://krakens.nesohq.org' }}
           tags: |
             ${{ env.REGISTRY }}/${{ github.repository }}/frontend:${{ steps.version.outputs.VERSION }}
             ${{ env.REGISTRY }}/${{ github.repository }}/frontend:latest
