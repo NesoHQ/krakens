@@ -193,8 +193,11 @@ export default function DomainsPage() {
 
       {/* Add Domain Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center p-4 z-50">
-          <Card className="p-6 max-w-md w-full">
+        <div 
+          className="fixed inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center z-50"
+          style={{ margin: 0, padding: 0 }}
+        >
+          <Card className="m-4 p-6 max-w-md w-full">
             <h2 className="text-2xl font-bold mb-4">Add New Domain</h2>
             <form onSubmit={handleCreate}>
               {error && (

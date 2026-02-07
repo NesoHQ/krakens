@@ -9,8 +9,11 @@ interface InstallationGuideModalProps {
 
 export default function InstallationGuideModal({ onClose, frontendUrl }: InstallationGuideModalProps) {
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center p-4 z-50">
-      <Card className="p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <div 
+      className="fixed inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center z-50"
+      style={{ margin: 0, padding: 0 }}
+    >
+      <Card className="m-4 p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-2xl font-bold">Installation Guide</h2>
           <button
