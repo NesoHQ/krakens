@@ -7,10 +7,10 @@ import EmptyState from '@/components/ui/EmptyState';
 import Alert from '@/components/ui/Alert';
 
 // API Keys Components
-import APIKeyCard from '@/components/api-keys/APIKeyCard';
+import APIKeysTable from '@/components/api-keys/APIKeysTable';
 import NewKeyDisplay from '@/components/api-keys/NewKeyDisplay';
 import GenerateKeyModal from '@/components/api-keys/GenerateKeyModal';
-import InstallationGuideModal from '@/components/api-keys/InstallationGuideModal';
+import FrameworkInstructionsModal from '@/components/api-keys/FrameworkInstructionsModal';
 import InfoCard from '@/components/api-keys/InfoCard';
 
 // Custom hook for API keys management
@@ -96,7 +96,8 @@ export default function APIKeysPage() {
   } = useAPIKeys();
 
   const [showModal, setShowModal] = useState(false);
-  const [showInstallModal, setShowInstallModal] = useState(false);
+  const [showInstructionsModal, setShowInstructionsModal] = useState(false);
+  const [selectedKeyForInstructions, setSelectedKeyForInstructions] = useState<APIKey | null>(null);
   const [newlyCreatedKey, setNewlyCreatedKey] = useState('');
 
   const frontendUrl = process.env.NEXT_PUBLIC_FRONTEND_URL || 
@@ -114,6 +115,11 @@ export default function APIKeysPage() {
     const key = await handleCreateKey(domainIds);
     setNewlyCreatedKey(key);
     setShowModal(false);
+  };
+
+  const handleViewInstructions = (key: APIKey) => {
+    setSelectedKeyForInstructions(key);
+    setShowInstructionsModal(true);
   };
 
   if (loading) {
@@ -135,18 +141,13 @@ export default function APIKeysPage() {
           <h1 className="text-3xl font-bold mb-1">API Keys</h1>
           <p className="text-muted-foreground">Manage authentication keys for tracking</p>
         </div>
-        <div className="flex space-x-3">
-          <button onClick={() => setShowInstallModal(true)} className="btn btn-secondary">
-            📖 Installation Guide
-          </button>
-          <button 
-            onClick={() => setShowModal(true)} 
-            className="btn btn-primary"
-            disabled={domains.length === 0}
-          >
-            + Generate API Key
-          </button>
-        </div>
+        <button 
+          onClick={() => setShowModal(true)} 
+          className="btn btn-primary"
+          disabled={domains.length === 0}
+        >
+          + Generate API Key
+        </button>
       </div>
 
       {/* Alerts */}
@@ -187,17 +188,12 @@ export default function APIKeysPage() {
           } : undefined}
         />
       ) : (
-        <div className="space-y-4">
-          {apiKeys.map((key) => (
-            <APIKeyCard
-              key={key.id}
-              apiKey={key}
-              onCopy={copyToClipboard}
-              onViewCode={setNewlyCreatedKey}
-              onRevoke={handleRevokeKey}
-            />
-          ))}
-        </div>
+        <APIKeysTable
+          apiKeys={apiKeys}
+          onCopy={copyToClipboard}
+          onViewInstructions={handleViewInstructions}
+          onRevoke={handleRevokeKey}
+        />
       )}
 
       {/* Modals */}
@@ -209,10 +205,15 @@ export default function APIKeysPage() {
         />
       )}
 
-      {showInstallModal && (
-        <InstallationGuideModal
+      {showInstructionsModal && selectedKeyForInstructions && (
+        <FrameworkInstructionsModal
+          apiKey={selectedKeyForInstructions}
           frontendUrl={frontendUrl}
-          onClose={() => setShowInstallModal(false)}
+          onClose={() => {
+            setShowInstructionsModal(false);
+            setSelectedKeyForInstructions(null);
+          }}
+          onCopy={copyToClipboard}
         />
       )}
     </div>
