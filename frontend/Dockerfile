@@ -7,11 +7,9 @@ FROM node:24-alpine AS builder
 WORKDIR /app
 
 # Build-time arguments
-ARG NEXT_PUBLIC_API_URL
 ARG NEXT_PUBLIC_FRONTEND_URL
 
 # Set as environment variables for build
-ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_FRONTEND_URL=$NEXT_PUBLIC_FRONTEND_URL
 ENV NEXT_TELEMETRY_DISABLED=1
 
@@ -22,9 +20,6 @@ RUN yarn build
 
 FROM node:24-alpine AS runner
 WORKDIR /app
-
-ENV NODE_ENV=production
-ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
