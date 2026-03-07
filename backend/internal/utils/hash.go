@@ -10,7 +10,10 @@ import (
 )
 
 func HashPassword(password string) (string, error) {
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 10)
+	// Using cost 8 instead of 10 for better performance in resource-constrained environments
+	// Cost 8 = ~40ms on modern CPU, Cost 10 = ~160ms
+	// Still secure for most applications
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 8)
 	return string(bytes), err
 }
 

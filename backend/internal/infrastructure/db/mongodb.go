@@ -44,9 +44,19 @@ func (m *MongoDB) Collection(name string) *mongo.Collection {
 }
 
 func (m *MongoDB) EnsureIndexes(ctx context.Context) error {
+	// Users collection indexes
+	users := m.Collection("users")
+	_, err := users.Indexes().CreateOne(ctx, mongo.IndexModel{
+		Keys:    bson.D{{Key: "email", Value: 1}},
+		Options: options.Index().SetUnique(true),
+	})
+	if err != nil {
+		return err
+	}
+
 	// Events collection indexes
 	events := m.Collection("events")
-	_, err := events.Indexes().CreateMany(ctx, []mongo.IndexModel{
+	_, err = events.Indexes().CreateMany(ctx, []mongo.IndexModel{
 		{
 			Keys: bson.D{{Key: "domain_id", Value: 1}, {Key: "timestamp", Value: -1}},
 		},
