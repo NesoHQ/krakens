@@ -14,20 +14,26 @@ import (
 )
 
 type TrackingService struct {
-	eventRepo *repository.EventRepository
-	cache     *cache.RedisCache
-	queue     *queue.NATSQueue
+	eventRepo                *repository.EventRepository
+	cache                    *cache.RedisCache
+	queue                    *queue.NATSQueue
+	activeVisitorTimeoutMins int
+	realtimeStatsWindowMins  int
 }
 
 func NewTrackingService(
 	eventRepo *repository.EventRepository,
 	cache *cache.RedisCache,
 	queue *queue.NATSQueue,
+	timeoutMins int,
+	statsWindowMins int,
 ) *TrackingService {
 	return &TrackingService{
-		eventRepo: eventRepo,
-		cache:     cache,
-		queue:     queue,
+		eventRepo:                eventRepo,
+		cache:                    cache,
+		queue:                    queue,
+		activeVisitorTimeoutMins: timeoutMins,
+		realtimeStatsWindowMins:  statsWindowMins,
 	}
 }
 
@@ -66,41 +72,76 @@ func (s *TrackingService) Track(ctx context.Context, domainID primitive.ObjectID
 	return nil
 }
 
-func (s *TrackingService) GetRealtimeStats(ctx context.Context, domainID primitive.ObjectID) (*domain.RealtimeStats, error) {
+func (s *TrackingService) GetRealtimeStats(ctx context.Context, domainID primitive.ObjectID, period string) (*domain.RealtimeStats, error) {
 	// Get active visitors count from Sorted Set
 	activeVisitorsKey := fmt.Sprintf("active_visitors:%s", domainID.Hex())
 
-	// Remove visitors inactive for more than 5 minutes
-	fiveMinutesAgo := fmt.Sprintf("%d", time.Now().Add(-5*time.Minute).Unix())
+	// Remove visitors inactive for more than X minutes
+	fiveMinutesAgo := fmt.Sprintf("%d", time.Now().UTC().Add(-time.Duration(s.activeVisitorTimeoutMins)*time.Minute).Unix())
 	s.cache.ZRemRangeByScore(ctx, activeVisitorsKey, "-inf", fiveMinutesAgo)
 
 	// Count remaining active visitors
 	count, _ := s.cache.ZCard(ctx, activeVisitorsKey)
 	activeVisitors := int(count)
 
-	// Get aggregated stats from DB (last 60 minutes)
-	since := time.Now().Add(-60 * time.Minute)
-	stats, err := s.eventRepo.GetAggregatedStats(ctx, domainID, since)
+	// Get aggregated stats from DB based on period
+	var since time.Time
+	switch period {
+	case "24h":
+		since = time.Now().UTC().Add(-24 * time.Hour)
+	case "7d":
+		since = time.Now().UTC().Add(-7 * 24 * time.Hour)
+	case "30d":
+		since = time.Now().UTC().Add(-30 * 24 * time.Hour)
+	default:
+		since = time.Now().UTC().Add(-time.Duration(s.realtimeStatsWindowMins) * time.Minute)
+	}
+
+	stats, err := s.eventRepo.GetAggregatedStats(ctx, domainID, since, period)
 	if err != nil {
 		return nil, err
 	}
 
 	stats.ActiveVisitors = activeVisitors
 
-	// Ensure all 60 minutes are present (fill gaps)
+	// Fill gaps based on period
 	hitsMap := make(map[string]int)
 	for _, h := range stats.HitsPerMinute {
 		hitsMap[h.Minute] = h.Hits
 	}
 
+	var fullHits []domain.HitsPerMinute
 	now := time.Now().UTC()
-	fullHits := []domain.HitsPerMinute{}
-	for i := 59; i >= 0; i-- {
-		minuteTime := now.Add(-time.Duration(i) * time.Minute)
-		minuteKey := minuteTime.Format("15:04")
+
+	var numSteps int
+	var step time.Duration
+	var format string
+
+	switch period {
+	case "24h":
+		numSteps = 24
+		step = time.Hour
+		format = "2006-01-02 15:00"
+	case "7d":
+		numSteps = 7
+		step = 24 * time.Hour
+		format = "2006-01-02"
+	case "30d":
+		numSteps = 30
+		step = 24 * time.Hour
+		format = "2006-01-02"
+	default: // 60m
+		numSteps = 60
+		step = time.Minute
+		format = "15:04"
+	}
+
+	for i := numSteps - 1; i >= 0; i-- {
+		t := now.Add(-time.Duration(i) * step)
+		key := t.Format(format)
 		fullHits = append(fullHits, domain.HitsPerMinute{
-			Minute: minuteKey,
-			Hits:   hitsMap[minuteKey],
+			Minute: key,
+			Hits:   hitsMap[key],
 		})
 	}
 	stats.HitsPerMinute = fullHits
@@ -128,8 +169,8 @@ func (s *TrackingService) GetOverviewStats(ctx context.Context, domainID primiti
 	}, nil
 }
 
-func (s *TrackingService) GetUnifiedStats(ctx context.Context, domainID primitive.ObjectID) (map[string]interface{}, error) {
-	realtime, err := s.GetRealtimeStats(ctx, domainID)
+func (s *TrackingService) GetUnifiedStats(ctx context.Context, domainID primitive.ObjectID, period string) (map[string]interface{}, error) {
+	realtime, err := s.GetRealtimeStats(ctx, domainID, period)
 	if err != nil {
 		return nil, err
 	}

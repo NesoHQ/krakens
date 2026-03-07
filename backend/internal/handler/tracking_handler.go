@@ -66,7 +66,8 @@ func (h *TrackingHandler) GetRealtimeStats(c *gin.Context) {
 		return
 	}
 
-	stats, err := h.trackingService.GetRealtimeStats(c.Request.Context(), domainID)
+	period := c.DefaultQuery("period", "60m")
+	stats, err := h.trackingService.GetRealtimeStats(c.Request.Context(), domainID, period)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -98,7 +99,8 @@ func (h *TrackingHandler) GetUnifiedStats(c *gin.Context) {
 		return
 	}
 
-	stats, err := h.trackingService.GetUnifiedStats(c.Request.Context(), domainID)
+	period := c.DefaultQuery("period", "60m")
+	stats, err := h.trackingService.GetUnifiedStats(c.Request.Context(), domainID, period)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

@@ -62,7 +62,7 @@ func main() {
 	authService := service.NewAuthService(userRepo, cfg.JWTSecret)
 	domainService := service.NewDomainService(domainRepo)
 	apiKeyService := service.NewAPIKeyService(apiKeyRepo)
-	trackingService := service.NewTrackingService(eventRepo, redisCache, natsQueue)
+	trackingService := service.NewTrackingService(eventRepo, redisCache, natsQueue, cfg.ActiveVisitorTimeoutMins, cfg.RealtimeStatsWindowMins)
 
 	// Initialize handlers
 	authHandler := handler.NewAuthHandler(authService)

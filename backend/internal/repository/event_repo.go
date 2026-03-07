@@ -83,40 +83,58 @@ func (r *EventRepository) CountUnique(ctx context.Context, domainID primitive.Ob
 	return 0, nil
 }
 
-func (r *EventRepository) GetAggregatedStats(ctx context.Context, domainID primitive.ObjectID, since time.Time) (*domain.RealtimeStats, error) {
+func (r *EventRepository) GetAggregatedStats(ctx context.Context, domainID primitive.ObjectID, since time.Time, period string) (*domain.RealtimeStats, error) {
+	dateFormat := "%H:%M"
+	chartSince := since
+
+	switch period {
+	case "24h":
+		dateFormat = "%Y-%m-%d %H:00"
+	case "7d", "30d":
+		dateFormat = "%Y-%m-%d"
+	default: // 60m
+		// For Live view, we always want 60 minutes of chart data
+		// even if the categories window (since) is smaller
+		chartSince = time.Now().UTC().Add(-60 * time.Minute)
+	}
+
 	pipeline := mongo.Pipeline{
 		bson.D{{Key: "$match", Value: bson.M{
 			"domain_id": domainID,
-			"timestamp": bson.M{"$gte": since},
+			"timestamp": bson.M{"$gte": chartSince}, // Match everything needed for the chart
 		}}},
 		bson.D{{Key: "$facet", Value: bson.M{
 			"top_pages": []bson.D{
+				{{Key: "$match", Value: bson.M{"timestamp": bson.M{"$gte": since}}}},
 				{{Key: "$group", Value: bson.M{"_id": "$path", "hits": bson.M{"$sum": 1}}}},
 				{{Key: "$sort", Value: bson.M{"hits": -1}}},
 				{{Key: "$limit", Value: 10}},
 			},
 			"top_referrers": []bson.D{
-				{{Key: "$match", Value: bson.M{"referrer": bson.M{"$ne": ""}}}},
+				{{Key: "$match", Value: bson.M{"timestamp": bson.M{"$gte": since}, "referrer": bson.M{"$ne": ""}}}},
 				{{Key: "$group", Value: bson.M{"_id": "$referrer", "hits": bson.M{"$sum": 1}}}},
 				{{Key: "$sort", Value: bson.M{"hits": -1}}},
 				{{Key: "$limit", Value: 10}},
 			},
 			"browsers": []bson.D{
+				{{Key: "$match", Value: bson.M{"timestamp": bson.M{"$gte": since}}}},
 				{{Key: "$group", Value: bson.M{"_id": bson.M{"browser": "$browser", "visitor_id": "$visitor_id"}}}},
 				{{Key: "$group", Value: bson.M{"_id": "$_id.browser", "hits": bson.M{"$sum": 1}}}},
 			},
 			"devices": []bson.D{
+				{{Key: "$match", Value: bson.M{"timestamp": bson.M{"$gte": since}}}},
 				{{Key: "$group", Value: bson.M{"_id": bson.M{"device": "$device", "visitor_id": "$visitor_id"}}}},
 				{{Key: "$group", Value: bson.M{"_id": "$_id.device", "hits": bson.M{"$sum": 1}}}},
 			},
 			"countries": []bson.D{
+				{{Key: "$match", Value: bson.M{"timestamp": bson.M{"$gte": since}}}},
 				{{Key: "$group", Value: bson.M{"_id": bson.M{"country": "$country", "visitor_id": "$visitor_id"}}}},
 				{{Key: "$group", Value: bson.M{"_id": "$_id.country", "hits": bson.M{"$sum": 1}}}},
 			},
 			"hits_per_minute": []bson.D{
 				{{Key: "$group", Value: bson.M{
 					"_id": bson.M{
-						"$dateToString": bson.M{"format": "%H:%M", "date": "$timestamp"},
+						"$dateToString": bson.M{"format": dateFormat, "date": "$timestamp"},
 					},
 					"hits": bson.M{"$sum": 1},
 				}}},

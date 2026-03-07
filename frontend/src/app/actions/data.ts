@@ -34,14 +34,17 @@ export async function getAPIKeys() {
     }
 }
 
-export async function getUnifiedStats(domainId: string) {
+export async function getUnifiedStats(domainId: string, period?: string) {
     if (!domainId) return { success: false, error: 'Domain ID required' };
 
     try {
         const headers = await getAuthHeaders();
         const response = await axios.get(`${BACKEND_URL}/api/stats/unified`, {
             ...headers,
-            params: { domain_id: domainId },
+            params: {
+                domain_id: domainId,
+                period: period || '60m'
+            },
         });
         return { success: true, data: response.data };
     } catch (error: any) {

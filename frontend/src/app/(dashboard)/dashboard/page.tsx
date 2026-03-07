@@ -24,6 +24,7 @@ import DomainInfoCard from '@/components/dashboard/DomainInfoCard';
 function useDashboardData() {
   const [domains, setDomains] = useState<Domain[]>([]);
   const [selectedDomain, setSelectedDomain] = useState<string>('');
+  const [period, setPeriod] = useState<string>('60m');
   const [realtimeStats, setRealtimeStats] = useState<RealtimeStats | null>(null);
   const [overviewStats, setOverviewStats] = useState<OverviewStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -59,7 +60,7 @@ function useDashboardData() {
     if (!selectedDomain) return;
 
     try {
-      const result = await getUnifiedStats(selectedDomain);
+      const result = await getUnifiedStats(selectedDomain, period);
 
       if (result.success && result.data) {
         let { realtime, overview } = result.data;
@@ -67,17 +68,43 @@ function useDashboardData() {
         // Convert UTC times to local timezone
         if (realtime.hits_per_minute) {
           realtime.hits_per_minute = realtime.hits_per_minute.map((item: any) => {
-            const [hours, minutes] = item.minute.split(':');
-            const utcDate = new Date();
-            utcDate.setUTCHours(parseInt(hours), parseInt(minutes), 0, 0);
+            // For periods other than 60m, the format might be different
+            if (period === '60m') {
+              const [hours, minutes] = item.minute.split(':');
+              const utcDate = new Date();
+              utcDate.setUTCHours(parseInt(hours), parseInt(minutes), 0, 0);
 
-            const localTime = utcDate.toLocaleTimeString('en-US', {
-              hour: '2-digit',
-              minute: '2-digit',
-              hour12: false
-            });
+              const localTime = utcDate.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+              });
 
-            return { ...item, minute: localTime };
+              return { ...item, minute: localTime };
+            }
+
+            if (period === '24h') {
+              // Format: YYYY-MM-DD HH:00 (UTC)
+              const utcDate = new Date(item.minute.replace(' ', 'T') + ':00Z');
+              const localTime = utcDate.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+              });
+              return { ...item, minute: localTime };
+            }
+
+            if (period === '7d' || period === '30d') {
+              // Format: YYYY-MM-DD (UTC)
+              const utcDate = new Date(item.minute + 'T00:00:00Z');
+              const localTime = utcDate.toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric'
+              });
+              return { ...item, minute: localTime };
+            }
+
+            return item;
           });
         }
 
@@ -104,12 +131,14 @@ function useDashboardData() {
       return () => clearInterval(interval);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDomain]);
+  }, [selectedDomain, period]);
 
   return {
     domains,
     selectedDomain,
     setSelectedDomain,
+    period,
+    setPeriod,
     realtimeStats,
     overviewStats,
     loading,
@@ -124,6 +153,8 @@ export default function DashboardPage() {
     domains,
     selectedDomain,
     setSelectedDomain,
+    period,
+    setPeriod,
     realtimeStats,
     overviewStats,
     loading,
@@ -204,7 +235,7 @@ export default function DashboardPage() {
 
       <MetricsCards realtimeStats={realtimeStats} overviewStats={overviewStats} />
 
-      <TrafficChart realtimeStats={realtimeStats} />
+      <TrafficChart realtimeStats={realtimeStats} period={period} onPeriodChange={setPeriod} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <TopPages realtimeStats={realtimeStats} />
