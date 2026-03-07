@@ -50,7 +50,7 @@ func (s *TrackingService) Track(ctx context.Context, domainID primitive.ObjectID
 		IPHash:    utils.HashIP(ip),
 		Browser:   uaInfo.Browser,
 		Device:    uaInfo.Device,
-		Country:   "Unknown", // TODO: Add GeoIP
+		Country:   utils.GetCountryFromIP(ip),
 		VisitorID: req.VisitorID,
 	}
 
@@ -65,6 +65,9 @@ func (s *TrackingService) Track(ctx context.Context, domainID primitive.ObjectID
 	if err := s.cache.ZAdd(ctx, activeVisitorsKey, req.VisitorID, now); err != nil {
 		return err
 	}
+
+	// Set 24h expiration on the active visitors key to ensure it's cleaned up even if not checked
+	_ = s.cache.Expire(ctx, activeVisitorsKey, 24*time.Hour)
 
 	// Publish real-time update
 	s.cache.Publish(ctx, fmt.Sprintf("realtime:%s", domainID.Hex()), event)

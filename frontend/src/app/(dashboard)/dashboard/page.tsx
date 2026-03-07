@@ -1,6 +1,6 @@
-'use client';
+"use client"
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { getUnifiedStats, getDomains, getAPIKeys } from '../../actions/data';
 import type { RealtimeStats, OverviewStats, Domain } from '@/types';
@@ -31,7 +31,7 @@ function useDashboardData() {
   const [hasAPIKeys, setHasAPIKeys] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
 
-  const loadInitialData = async () => {
+  const loadInitialData = useCallback(async () => {
     try {
       const [domainsRes, keysRes] = await Promise.all([
         getDomains(),
@@ -41,7 +41,7 @@ function useDashboardData() {
       if (domainsRes.success) {
         setDomains(domainsRes.data || []);
         if (domainsRes.data && domainsRes.data.length > 0) {
-          setSelectedDomain(domainsRes.data[0].id);
+          setSelectedDomain(prev => prev || domainsRes.data[0].id);
         }
       }
 
@@ -54,9 +54,9 @@ function useDashboardData() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const loadStats = async () => {
+  const loadStats = useCallback(async () => {
     if (!selectedDomain) return;
 
     try {
@@ -110,30 +110,29 @@ function useDashboardData() {
 
         setRealtimeStats(realtime);
         setOverviewStats(overview);
+        setLastUpdate(new Date());
       }
     } catch (error) {
       console.error('Failed to load stats:', error);
     }
-  };
+  }, [selectedDomain, period]);
 
 
   useEffect(() => {
     loadInitialData();
-  }, []);
+  }, [loadInitialData]);
 
   useEffect(() => {
     if (selectedDomain) {
       loadStats();
       const interval = setInterval(() => {
         loadStats();
-        setLastUpdate(new Date());
-      }, 5000);
+      }, 10000); // Increase interval to 10s to reduce pressure
       return () => clearInterval(interval);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDomain, period]);
+  }, [selectedDomain, period, loadStats]);
 
-  return {
+  return useMemo(() => ({
     domains,
     selectedDomain,
     setSelectedDomain,
@@ -144,7 +143,7 @@ function useDashboardData() {
     loading,
     hasAPIKeys,
     lastUpdate,
-  };
+  }), [domains, selectedDomain, period, realtimeStats, overviewStats, loading, hasAPIKeys, lastUpdate]);
 }
 
 export default function DashboardPage() {

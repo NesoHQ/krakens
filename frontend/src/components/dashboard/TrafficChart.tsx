@@ -1,5 +1,4 @@
-'use client';
-
+import { memo, useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Card } from '@/components/ui/card';
 import type { RealtimeStats } from '@/types';
@@ -10,10 +9,15 @@ interface TrafficChartProps {
   onPeriodChange: (period: string) => void;
 }
 
-export default function TrafficChart({ realtimeStats, period, onPeriodChange }: TrafficChartProps) {
-  const hasData = (realtimeStats?.hits_per_minute?.length || 0) > 0;
-  const totalHits = realtimeStats?.hits_per_minute?.reduce((sum, item) => sum + item.hits, 0) || 0;
-  const peakTraffic = Math.max(...(realtimeStats?.hits_per_minute?.map(item => item.hits) || [0]));
+const TrafficChart = memo(function TrafficChart({ realtimeStats, period, onPeriodChange }: TrafficChartProps) {
+  const hitsPerMinute = realtimeStats?.hits_per_minute || [];
+  const hasData = hitsPerMinute.length > 0;
+
+  const { totalHits, peakTraffic } = useMemo(() => {
+    const total = hitsPerMinute.reduce((sum, item) => sum + item.hits, 0);
+    const peak = Math.max(...(hitsPerMinute.map(item => item.hits) || [0]));
+    return { totalHits: total, peakTraffic: peak };
+  }, [hitsPerMinute]);
 
   const getPeriodLabel = () => {
     switch (period) {
@@ -168,4 +172,6 @@ export default function TrafficChart({ realtimeStats, period, onPeriodChange }: 
       )}
     </Card>
   );
-}
+});
+
+export default TrafficChart;

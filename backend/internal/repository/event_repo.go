@@ -111,7 +111,7 @@ func (r *EventRepository) GetAggregatedStats(ctx context.Context, domainID primi
 				{{Key: "$limit", Value: 10}},
 			},
 			"top_referrers": []bson.D{
-				{{Key: "$match", Value: bson.M{"timestamp": bson.M{"$gte": since}, "referrer": bson.M{"$ne": ""}}}},
+				{{Key: "$match", Value: bson.M{"timestamp": bson.M{"$gte": since}}}},
 				{{Key: "$group", Value: bson.M{"_id": "$referrer", "hits": bson.M{"$sum": 1}}}},
 				{{Key: "$sort", Value: bson.M{"hits": -1}}},
 				{{Key: "$limit", Value: 10}},
