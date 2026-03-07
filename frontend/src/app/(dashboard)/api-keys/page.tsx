@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { getAPIKeys, createAPIKey, revokeAPIKey, getDomains } from '../../actions/data';
 import type { APIKey, Domain } from '@/types';
+import { ENV } from '@/lib/env';
 import EmptyState from '@/components/ui/EmptyState';
 import Alert from '@/components/ui/Alert';
 import Toast from '@/components/ui/Toast';
@@ -105,7 +106,7 @@ export default function APIKeysPage() {
   const [selectedKeyForInstructions, setSelectedKeyForInstructions] = useState<APIKey | null>(null);
   const [newlyCreatedKey, setNewlyCreatedKey] = useState('');
 
-  const frontendUrl = process.env.NEXT_PUBLIC_FRONTEND_URL ||
+  const frontendUrl = ENV.NEXT_PUBLIC_FRONTEND_URL ||
     (typeof window !== 'undefined' ? window.location.origin : '');
 
   const getInstallCode = (apiKey: string) => {

@@ -3,7 +3,9 @@
 import { cookies } from 'next/headers';
 import axios from 'axios';
 
-const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8080';
+import { ENV } from '@/lib/env';
+
+const BACKEND_URL = ENV.BACKEND_URL;
 
 export type AuthState = {
     success: boolean;
