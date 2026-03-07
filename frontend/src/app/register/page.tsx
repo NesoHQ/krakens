@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { register } from '@/lib/api';
+import { register } from '../actions/auth';
 import { useAuthStore } from '@/store/authStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,18 +28,21 @@ export default function RegisterPage() {
     }
   }, [isAuthenticated, router]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
-    try {
-      const { data } = await register(email, password);
-      setAuth(data.user, data.token);
+    const formData = new FormData(e.currentTarget);
+    const result = await register({}, formData);
+
+    if (result.success) {
+      // Still update Zustand for UI state (user info)
+      setAuth(result.user, 'session-in-cookie');
       router.push('/dashboard');
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Registration failed');
-    } finally {
+      router.refresh();
+    } else {
+      setError(result.error || 'Registration failed');
       setLoading(false);
     }
   };
@@ -80,11 +83,10 @@ export default function RegisterPage() {
                 <Label htmlFor="email">Email Address</Label>
                 <Input
                   id="email"
+                  name="email"
                   type="email"
                   placeholder="you@example.com"
                   className="h-11 bg-background/50"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
                   disabled={loading}
                   required
                   autoFocus
@@ -96,11 +98,10 @@ export default function RegisterPage() {
                 <div className="relative">
                   <Input
                     id="password"
+                    name="password"
                     type={showPassword ? 'text' : 'password'}
                     placeholder="Create a strong password"
                     className="h-11 bg-background/50 pr-10"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
                     disabled={loading}
                     required
                   />
@@ -132,6 +133,7 @@ export default function RegisterPage() {
                 {loading ? 'Creating account...' : 'Create Account'}
               </Button>
             </form>
+
 
             <div className="text-center">
               <p className="text-sm text-muted-foreground">

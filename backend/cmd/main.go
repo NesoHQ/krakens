@@ -33,6 +33,11 @@ func main() {
 	}
 	defer mongodb.Close()
 
+	// Ensure Indexes
+	if err := mongodb.EnsureIndexes(context.Background()); err != nil {
+		log.Printf("Warning: Failed to ensure indexes: %v", err)
+	}
+
 	// Initialize Redis
 	redisCache, err := cache.NewRedisCache(cfg.RedisURL)
 	if err != nil {
@@ -114,6 +119,7 @@ func main() {
 		// Stats
 		protected.GET("/stats/realtime", trackingHandler.GetRealtimeStats)
 		protected.GET("/stats/overview", trackingHandler.GetOverviewStats)
+		protected.GET("/stats/unified", trackingHandler.GetUnifiedStats)
 	}
 
 	// Health check

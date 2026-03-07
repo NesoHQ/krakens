@@ -41,6 +41,18 @@ func (r *RedisCache) Incr(ctx context.Context, key string) error {
 	return r.client.Incr(ctx, key).Err()
 }
 
+func (r *RedisCache) ZAdd(ctx context.Context, key string, member string, score float64) error {
+	return r.client.ZAdd(ctx, key, redis.Z{Score: score, Member: member}).Err()
+}
+
+func (r *RedisCache) ZRemRangeByScore(ctx context.Context, key string, min, max string) error {
+	return r.client.ZRemRangeByScore(ctx, key, min, max).Err()
+}
+
+func (r *RedisCache) ZCard(ctx context.Context, key string) (int64, error) {
+	return r.client.ZCard(ctx, key).Result()
+}
+
 func (r *RedisCache) Expire(ctx context.Context, key string, expiration time.Duration) error {
 	return r.client.Expire(ctx, key, expiration).Err()
 }

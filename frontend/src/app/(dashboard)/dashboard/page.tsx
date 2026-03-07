@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { getRealtimeStats, getOverviewStats, getDomains, getAPIKeys } from '@/lib/api';
+import { getUnifiedStats, getDomains, getAPIKeys } from '../../actions/data';
 import type { RealtimeStats, OverviewStats, Domain } from '@/types';
 import GettingStarted from '@/components/onboarding/GettingStarted';
 import EmptyState from '@/components/ui/EmptyState';
@@ -36,12 +36,16 @@ function useDashboardData() {
         getDomains(),
         getAPIKeys(),
       ]);
-      
-      setDomains(domainsRes.data || []);
-      setHasAPIKeys((keysRes.data || []).length > 0);
-      
-      if (domainsRes.data && domainsRes.data.length > 0) {
-        setSelectedDomain(domainsRes.data[0].id);
+
+      if (domainsRes.success) {
+        setDomains(domainsRes.data || []);
+        if (domainsRes.data && domainsRes.data.length > 0) {
+          setSelectedDomain(domainsRes.data[0].id);
+        }
+      }
+
+      if (keysRes.success) {
+        setHasAPIKeys((keysRes.data || []).length > 0);
       }
     } catch (error) {
       console.error('Failed to load initial data:', error);
@@ -55,34 +59,36 @@ function useDashboardData() {
     if (!selectedDomain) return;
 
     try {
-      const [realtime, overview] = await Promise.all([
-        getRealtimeStats(selectedDomain),
-        getOverviewStats(selectedDomain),
-      ]);
-      
-      // Convert UTC times to local timezone
-      if (realtime.data?.hits_per_minute) {
-        realtime.data.hits_per_minute = realtime.data.hits_per_minute.map(item => {
-          const [hours, minutes] = item.minute.split(':');
-          const utcDate = new Date();
-          utcDate.setUTCHours(parseInt(hours), parseInt(minutes), 0, 0);
-          
-          const localTime = utcDate.toLocaleTimeString('en-US', { 
-            hour: '2-digit', 
-            minute: '2-digit',
-            hour12: false 
+      const result = await getUnifiedStats(selectedDomain);
+
+      if (result.success && result.data) {
+        let { realtime, overview } = result.data;
+
+        // Convert UTC times to local timezone
+        if (realtime.hits_per_minute) {
+          realtime.hits_per_minute = realtime.hits_per_minute.map((item: any) => {
+            const [hours, minutes] = item.minute.split(':');
+            const utcDate = new Date();
+            utcDate.setUTCHours(parseInt(hours), parseInt(minutes), 0, 0);
+
+            const localTime = utcDate.toLocaleTimeString('en-US', {
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: false
+            });
+
+            return { ...item, minute: localTime };
           });
-          
-          return { ...item, minute: localTime };
-        });
+        }
+
+        setRealtimeStats(realtime);
+        setOverviewStats(overview);
       }
-      
-      setRealtimeStats(realtime.data);
-      setOverviewStats(overview.data);
     } catch (error) {
       console.error('Failed to load stats:', error);
     }
   };
+
 
   useEffect(() => {
     loadInitialData();
@@ -151,7 +157,7 @@ export default function DashboardPage() {
             onClick: () => router.push('/domains'),
           }}
         />
-        
+
         <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card className="text-center p-6 bg-primary/5">
             <div className="text-4xl mb-3">📊</div>

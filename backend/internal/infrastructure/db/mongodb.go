@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -40,4 +41,18 @@ func (m *MongoDB) Close() error {
 
 func (m *MongoDB) Collection(name string) *mongo.Collection {
 	return m.Database.Collection(name)
+}
+
+func (m *MongoDB) EnsureIndexes(ctx context.Context) error {
+	// Events collection indexes
+	events := m.Collection("events")
+	_, err := events.Indexes().CreateMany(ctx, []mongo.IndexModel{
+		{
+			Keys: bson.D{{Key: "domain_id", Value: 1}, {Key: "timestamp", Value: -1}},
+		},
+		{
+			Keys: bson.D{{Key: "domain_id", Value: 1}, {Key: "visitor_id", Value: 1}},
+		},
+	})
+	return err
 }

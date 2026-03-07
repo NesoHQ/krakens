@@ -7,6 +7,7 @@ import { LayoutDashboard, Globe, Key, LogOut, Zap, ChevronLeft, ChevronRight } f
 import { useAuthStore } from '@/store/authStore';
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
+import { logout as serverLogout } from '@/app/actions/auth';
 
 export default function DashboardSidebar() {
   const pathname = usePathname();
@@ -37,13 +38,17 @@ export default function DashboardSidebar() {
     return pathname.startsWith(url);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await serverLogout();
     logout();
     router.push('/login');
+    router.refresh();
   };
 
+
+
   return (
-    <aside 
+    <aside
       className={cn(
         "border-r bg-card flex flex-col transition-all duration-300 sticky top-0 h-screen",
         isCollapsed ? "w-20" : "w-64"
@@ -65,7 +70,7 @@ export default function DashboardSidebar() {
             </div>
           )}
         </div>
-        
+
         {/* Toggle Button */}
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}

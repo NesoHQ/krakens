@@ -1,9 +1,9 @@
 import axios, { AxiosError } from 'axios';
-import type { 
-  AuthResponse, 
-  Domain, 
-  APIKey, 
-  RealtimeStats, 
+import type {
+  AuthResponse,
+  Domain,
+  APIKey,
+  RealtimeStats,
   OverviewStats,
   DomainSettings,
   TrackEventRequest,
@@ -37,7 +37,7 @@ api.interceptors.request.use(
           // Fall through to legacy token check
         }
       }
-      
+
       // Fallback to legacy token storage
       const token = localStorage.getItem('token');
       if (token) {
@@ -56,14 +56,14 @@ api.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
     if (error.response?.status === 401 && typeof window !== 'undefined') {
-      // Clear both storage locations
-      localStorage.removeItem('token');
+      // Clear storage
       localStorage.removeItem('krakens-auth');
       window.location.href = '/login';
     }
     return Promise.reject(error);
   }
 );
+
 
 // Authentication
 export const register = (email: string, password: string) =>

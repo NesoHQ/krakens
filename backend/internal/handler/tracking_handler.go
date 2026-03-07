@@ -60,7 +60,11 @@ func (h *TrackingHandler) Track(c *gin.Context) {
 }
 
 func (h *TrackingHandler) GetRealtimeStats(c *gin.Context) {
-	domainID, _ := primitive.ObjectIDFromHex(c.Query("domain_id"))
+	domainID, err := primitive.ObjectIDFromHex(c.Query("domain_id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid domain_id"})
+		return
+	}
 
 	stats, err := h.trackingService.GetRealtimeStats(c.Request.Context(), domainID)
 	if err != nil {
@@ -72,9 +76,29 @@ func (h *TrackingHandler) GetRealtimeStats(c *gin.Context) {
 }
 
 func (h *TrackingHandler) GetOverviewStats(c *gin.Context) {
-	domainID, _ := primitive.ObjectIDFromHex(c.Query("domain_id"))
+	domainID, err := primitive.ObjectIDFromHex(c.Query("domain_id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid domain_id"})
+		return
+	}
 
 	stats, err := h.trackingService.GetOverviewStats(c.Request.Context(), domainID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, stats)
+}
+
+func (h *TrackingHandler) GetUnifiedStats(c *gin.Context) {
+	domainID, err := primitive.ObjectIDFromHex(c.Query("domain_id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid domain_id"})
+		return
+	}
+
+	stats, err := h.trackingService.GetUnifiedStats(c.Request.Context(), domainID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

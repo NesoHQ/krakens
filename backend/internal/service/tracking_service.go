@@ -53,17 +53,10 @@ func (s *TrackingService) Track(ctx context.Context, domainID primitive.ObjectID
 		return err
 	}
 
-	// Increment real-time counters
-	activeKey := fmt.Sprintf("active:%s", domainID.Hex())
-	visitorKey := fmt.Sprintf("visitor:%s:%s", domainID.Hex(), req.VisitorID)
-
-	// Mark visitor as active
-	if err := s.cache.Set(ctx, visitorKey, "1", 5*time.Minute); err != nil {
-		return err
-	}
-
-	// Increment active counter
-	if err := s.cache.Incr(ctx, activeKey); err != nil {
+	// Mark visitor as active using Sorted Set
+	activeVisitorsKey := fmt.Sprintf("active_visitors:%s", domainID.Hex())
+	now := float64(time.Now().Unix())
+	if err := s.cache.ZAdd(ctx, activeVisitorsKey, req.VisitorID, now); err != nil {
 		return err
 	}
 
@@ -74,93 +67,43 @@ func (s *TrackingService) Track(ctx context.Context, domainID primitive.ObjectID
 }
 
 func (s *TrackingService) GetRealtimeStats(ctx context.Context, domainID primitive.ObjectID) (*domain.RealtimeStats, error) {
-	// Get active visitors count
-	activeKey := fmt.Sprintf("active:%s", domainID.Hex())
-	activeStr, err := s.cache.Get(ctx, activeKey)
-	activeVisitors := 0
-	if err == nil {
-		fmt.Sscanf(activeStr, "%d", &activeVisitors)
-	}
+	// Get active visitors count from Sorted Set
+	activeVisitorsKey := fmt.Sprintf("active_visitors:%s", domainID.Hex())
 
-	// Get recent events (last 60 minutes)
-	events, err := s.eventRepo.GetRecentEvents(ctx, domainID, 60)
+	// Remove visitors inactive for more than 5 minutes
+	fiveMinutesAgo := fmt.Sprintf("%d", time.Now().Add(-5*time.Minute).Unix())
+	s.cache.ZRemRangeByScore(ctx, activeVisitorsKey, "-inf", fiveMinutesAgo)
+
+	// Count remaining active visitors
+	count, _ := s.cache.ZCard(ctx, activeVisitorsKey)
+	activeVisitors := int(count)
+
+	// Get aggregated stats from DB (last 60 minutes)
+	since := time.Now().Add(-60 * time.Minute)
+	stats, err := s.eventRepo.GetAggregatedStats(ctx, domainID, since)
 	if err != nil {
 		return nil, err
 	}
 
-	// Debug: Log event count
-	fmt.Printf("Found %d events in last 60 minutes for domain %s\n", len(events), domainID.Hex())
+	stats.ActiveVisitors = activeVisitors
 
-	// Aggregate stats
-	stats := &domain.RealtimeStats{
-		ActiveVisitors: activeVisitors,
-		HitsPerMinute:  []domain.HitsPerMinute{},
-		TopPages:       []domain.PageStats{},
-		TopReferrers:   []domain.ReferrerStats{},
-		Countries:      make(map[string]int),
-		Devices:        make(map[string]int),
-		Browsers:       make(map[string]int),
+	// Ensure all 60 minutes are present (fill gaps)
+	hitsMap := make(map[string]int)
+	for _, h := range stats.HitsPerMinute {
+		hitsMap[h.Minute] = h.Hits
 	}
 
-	// Calculate hits per minute for the last 60 minutes
 	now := time.Now().UTC()
-	hitsPerMinuteMap := make(map[string]int)
-
-	// Initialize all 60 minutes with 0 hits
+	fullHits := []domain.HitsPerMinute{}
 	for i := 59; i >= 0; i-- {
 		minuteTime := now.Add(-time.Duration(i) * time.Minute)
 		minuteKey := minuteTime.Format("15:04")
-		hitsPerMinuteMap[minuteKey] = 0
-	}
-
-	// Count hits per minute from events
-	for _, event := range events {
-		minuteKey := event.Timestamp.UTC().Format("15:04")
-		hitsPerMinuteMap[minuteKey]++
-	}
-
-	// Debug: Show first few minute keys with hits
-	fmt.Printf("Sample minute keys with hits:\n")
-	count := 0
-	for key, hits := range hitsPerMinuteMap {
-		if hits > 0 && count < 5 {
-			fmt.Printf("  %s: %d hits\n", key, hits)
-			count++
-		}
-	}
-	fmt.Printf("Current time (UTC): %s\n", now.Format("15:04"))
-
-	// Convert to sorted slice
-	for i := 59; i >= 0; i-- {
-		minuteTime := now.Add(-time.Duration(i) * time.Minute)
-		minuteKey := minuteTime.Format("15:04")
-		stats.HitsPerMinute = append(stats.HitsPerMinute, domain.HitsPerMinute{
+		fullHits = append(fullHits, domain.HitsPerMinute{
 			Minute: minuteKey,
-			Hits:   hitsPerMinuteMap[minuteKey],
+			Hits:   hitsMap[minuteKey],
 		})
 	}
-
-	// Aggregate data
-	pageHits := make(map[string]int)
-	referrerHits := make(map[string]int)
-
-	for _, event := range events {
-		pageHits[event.Path]++
-		if event.Referrer != "" {
-			referrerHits[event.Referrer]++
-		}
-		stats.Countries[event.Country]++
-		stats.Devices[event.Device]++
-		stats.Browsers[event.Browser]++
-	}
-
-	// Convert to slices
-	for path, hits := range pageHits {
-		stats.TopPages = append(stats.TopPages, domain.PageStats{Path: path, Hits: hits})
-	}
-	for referrer, hits := range referrerHits {
-		stats.TopReferrers = append(stats.TopReferrers, domain.ReferrerStats{Referrer: referrer, Hits: hits})
-	}
+	stats.HitsPerMinute = fullHits
 
 	return stats, nil
 }
@@ -182,5 +125,22 @@ func (s *TrackingService) GetOverviewStats(ctx context.Context, domainID primiti
 		UniqueVisitors: uniqueVisitors,
 		AvgSessionTime: 0, // TODO: Calculate
 		BounceRate:     0, // TODO: Calculate
+	}, nil
+}
+
+func (s *TrackingService) GetUnifiedStats(ctx context.Context, domainID primitive.ObjectID) (map[string]interface{}, error) {
+	realtime, err := s.GetRealtimeStats(ctx, domainID)
+	if err != nil {
+		return nil, err
+	}
+
+	overview, err := s.GetOverviewStats(ctx, domainID)
+	if err != nil {
+		return nil, err
+	}
+
+	return map[string]interface{}{
+		"realtime": realtime,
+		"overview": overview,
 	}, nil
 }

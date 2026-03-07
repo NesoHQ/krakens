@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getDomains, createDomain, deleteDomain } from '@/lib/api';
+import { getDomains, createDomain, deleteDomain } from '../../actions/data';
 import type { Domain } from '@/types';
 import { Card } from '@/components/ui/card';
 import EmptyState from '@/components/ui/EmptyState';
@@ -20,15 +20,14 @@ export default function DomainsPage() {
   }, []);
 
   const loadDomains = async () => {
-    try {
-      const { data } = await getDomains();
-      setDomains(data || []);
-    } catch (error) {
-      console.error('Failed to load domains:', error);
+    const result = await getDomains();
+    if (result.success) {
+      setDomains(result.data || []);
+    } else {
+      console.error('Failed to load domains:', result.error);
       setDomains([]);
-    } finally {
-      setLoading(false);
     }
+    setLoading(false);
   };
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -43,29 +42,29 @@ export default function DomainsPage() {
       return;
     }
 
-    try {
-      await createDomain(newDomain);
+    const result = await createDomain(newDomain);
+    if (result.success) {
       setNewDomain('');
       setShowModal(false);
       setSuccess(`Domain "${newDomain}" added successfully!`);
       loadDomains();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to create domain');
+    } else {
+      setError(result.error || 'Failed to create domain');
     }
   };
 
   const handleDelete = async (id: string, domainName: string) => {
     if (!confirm(`Are you sure you want to delete "${domainName}"? This action cannot be undone.`)) return;
 
-    try {
-      await deleteDomain(id);
+    const result = await deleteDomain(id);
+    if (result.success) {
       setSuccess(`Domain "${domainName}" deleted successfully`);
       loadDomains();
-    } catch (error) {
-      console.error('Failed to delete domain:', error);
-      setError('Failed to delete domain');
+    } else {
+      setError(result.error || 'Failed to delete domain');
     }
   };
+
 
   if (loading) {
     return (
@@ -144,11 +143,10 @@ export default function DomainsPage() {
                     )}
                   </div>
                   <span
-                    className={`inline-block px-2 py-1 text-xs rounded-full ${
-                      domain.verified
+                    className={`inline-block px-2 py-1 text-xs rounded-full ${domain.verified
                         ? 'bg-success/10 text-success'
                         : 'bg-warning/10 text-warning'
-                    }`}
+                      }`}
                   >
                     {domain.verified ? '✓ Verified' : '⏳ Pending Verification'}
                   </span>
@@ -161,7 +159,7 @@ export default function DomainsPage() {
                   🗑️
                 </button>
               </div>
-              
+
               <div className="space-y-2 text-sm text-muted-foreground bg-muted/50 rounded-lg p-3">
                 <div className="flex justify-between">
                   <span>Rate Limit:</span>
@@ -193,7 +191,7 @@ export default function DomainsPage() {
 
       {/* Add Domain Modal */}
       {showModal && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center z-50"
           style={{ margin: 0, padding: 0 }}
         >
@@ -220,7 +218,7 @@ export default function DomainsPage() {
                   Enter your domain without http:// or https:// (e.g., example.com, subdomain.example.com, or localhost)
                 </p>
               </div>
-              
+
               <Card className="p-3 mb-4 bg-primary/5 border-primary/20">
                 <p className="text-xs text-muted-foreground">
                   <strong>Next steps:</strong> After adding your domain, generate an API key and install the tracking code on your website.

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getAPIKeys, createAPIKey, revokeAPIKey, getDomains } from '@/lib/api';
+import { getAPIKeys, createAPIKey, revokeAPIKey, getDomains } from '../../actions/data';
 import type { APIKey, Domain } from '@/types';
 import EmptyState from '@/components/ui/EmptyState';
 import Alert from '@/components/ui/Alert';
@@ -25,8 +25,18 @@ function useAPIKeys() {
   const loadData = async () => {
     try {
       const [keysRes, domainsRes] = await Promise.all([getAPIKeys(), getDomains()]);
-      setApiKeys(keysRes.data || []);
-      setDomains(domainsRes.data || []);
+
+      if (keysRes.success) {
+        setApiKeys(keysRes.data || []);
+      } else {
+        console.error('Failed to load keys:', keysRes.error);
+      }
+
+      if (domainsRes.success) {
+        setDomains(domainsRes.data || []);
+      } else {
+        console.error('Failed to load domains:', domainsRes.error);
+      }
     } catch (error) {
       console.error('Failed to load data:', error);
       setApiKeys([]);
@@ -37,9 +47,12 @@ function useAPIKeys() {
   };
 
   const handleCreateKey = async (domainIds: string[]) => {
-    const { data } = await createAPIKey(domainIds);
-    await loadData();
-    return data.key;
+    const result = await createAPIKey(domainIds);
+    if (result.success) {
+      await loadData();
+      return result.data.key;
+    }
+    throw new Error(result.error || 'Failed to create API key');
   };
 
   const handleRevokeKey = async (id: string) => {
@@ -47,16 +60,17 @@ function useAPIKeys() {
       return;
     }
 
-    try {
-      await revokeAPIKey(id);
+    const result = await revokeAPIKey(id);
+    if (result.success) {
       await loadData();
       return true;
-    } catch (error) {
-      console.error('Failed to revoke API key:', error);
-      setError('Failed to revoke API key');
+    } else {
+      console.error('Failed to revoke API key:', result.error);
+      setError(result.error || 'Failed to revoke API key');
       return false;
     }
   };
+
 
   useEffect(() => {
     loadData();
@@ -91,7 +105,7 @@ export default function APIKeysPage() {
   const [selectedKeyForInstructions, setSelectedKeyForInstructions] = useState<APIKey | null>(null);
   const [newlyCreatedKey, setNewlyCreatedKey] = useState('');
 
-  const frontendUrl = process.env.NEXT_PUBLIC_FRONTEND_URL || 
+  const frontendUrl = process.env.NEXT_PUBLIC_FRONTEND_URL ||
     (typeof window !== 'undefined' ? window.location.origin : '');
 
   const getInstallCode = (apiKey: string) => {
@@ -145,8 +159,8 @@ export default function APIKeysPage() {
           <h1 className="text-3xl font-bold mb-1">API Keys</h1>
           <p className="text-muted-foreground">Manage authentication keys for tracking</p>
         </div>
-        <button 
-          onClick={() => setShowModal(true)} 
+        <button
+          onClick={() => setShowModal(true)}
           className="btn btn-primary"
           disabled={domains.length === 0}
         >
