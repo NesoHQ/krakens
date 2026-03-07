@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useActionState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { register } from '../actions/auth';
+import { register, AuthState } from '../actions/auth';
 import { useAuthStore } from '@/store/authStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,13 +13,16 @@ import { Eye, EyeOff, Zap } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
 
 export default function RegisterPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { setAuth, isAuthenticated } = useAuthStore();
+
+  const initialState: AuthState = {
+    success: false,
+    error: null,
+  };
+
+  const [state, formAction, isPending] = useActionState(register, initialState);
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -28,24 +31,14 @@ export default function RegisterPage() {
     }
   }, [isAuthenticated, router]);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-
-    const formData = new FormData(e.currentTarget);
-    const result = await register({}, formData);
-
-    if (result.success) {
+  useEffect(() => {
+    if (state.success && state.user) {
       // Still update Zustand for UI state (user info)
-      setAuth(result.user, 'session-in-cookie');
+      setAuth(state.user, 'session-in-cookie');
       router.push('/dashboard');
       router.refresh();
-    } else {
-      setError(result.error || 'Registration failed');
-      setLoading(false);
     }
-  };
+  }, [state, setAuth, router]);
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4 relative">
@@ -72,10 +65,10 @@ export default function RegisterPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {error && (
+            <form action={formAction} className="space-y-4">
+              {state.error && (
                 <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
-                  {error}
+                  {state.error}
                 </div>
               )}
 
@@ -87,7 +80,7 @@ export default function RegisterPage() {
                   type="email"
                   placeholder="you@example.com"
                   className="h-11 bg-background/50"
-                  disabled={loading}
+                  disabled={isPending}
                   required
                   autoFocus
                 />
@@ -102,7 +95,7 @@ export default function RegisterPage() {
                     type={showPassword ? 'text' : 'password'}
                     placeholder="Create a strong password"
                     className="h-11 bg-background/50 pr-10"
-                    disabled={loading}
+                    disabled={isPending}
                     required
                   />
                   <Button
@@ -111,7 +104,7 @@ export default function RegisterPage() {
                     size="sm"
                     className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
                     onClick={() => setShowPassword(!showPassword)}
-                    disabled={loading}
+                    disabled={isPending}
                   >
                     {showPassword ? (
                       <EyeOff className="h-4 w-4 text-muted-foreground" />
@@ -128,9 +121,9 @@ export default function RegisterPage() {
               <Button
                 type="submit"
                 className="w-full h-11 font-medium"
-                disabled={loading}
+                disabled={isPending}
               >
-                {loading ? 'Creating account...' : 'Create Account'}
+                {isPending ? 'Creating account...' : 'Create Account'}
               </Button>
             </form>
 

@@ -5,9 +5,19 @@ import axios from 'axios';
 
 const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8080';
 
-export async function login(prevState: any, formData: FormData) {
-    const email = formData.get('email');
-    const password = formData.get('password');
+export type AuthState = {
+    success: boolean;
+    error: string | null;
+    user?: any;
+};
+
+export async function login(prevState: AuthState | null, formData: FormData): Promise<AuthState> {
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+
+    if (!email || !password) {
+        return { success: false, error: 'Email and password are required' };
+    }
 
     try {
         const response = await axios.post(`${BACKEND_URL}/api/auth/login`, {
@@ -26,7 +36,7 @@ export async function login(prevState: any, formData: FormData) {
             maxAge: 60 * 60 * 24 * 7, // 1 week
         });
 
-        return { success: true, user };
+        return { success: true, user, error: null };
     } catch (error: any) {
         return {
             success: false,
@@ -40,9 +50,17 @@ export async function logout() {
     return { success: true };
 }
 
-export async function register(prevState: any, formData: FormData) {
-    const email = formData.get('email');
-    const password = formData.get('password');
+export async function register(prevState: AuthState | null, formData: FormData): Promise<AuthState> {
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+
+    if (!email || !password) {
+        return { success: false, error: 'Email and password are required' };
+    }
+
+    if (password.length < 8) {
+        return { success: false, error: 'Password must be at least 8 characters' };
+    }
 
     try {
         const response = await axios.post(`${BACKEND_URL}/api/auth/register`, {
@@ -60,7 +78,7 @@ export async function register(prevState: any, formData: FormData) {
             maxAge: 60 * 60 * 24 * 7,
         });
 
-        return { success: true, user };
+        return { success: true, user, error: null };
     } catch (error: any) {
         return {
             success: false,

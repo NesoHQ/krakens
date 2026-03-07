@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useActionState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { login } from '../actions/auth';
+import { login, AuthState } from '../actions/auth';
 import { useAuthStore } from '@/store/authStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,29 +14,24 @@ import ThemeToggle from '@/components/ThemeToggle';
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { setAuth } = useAuthStore();
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
+  const initialState: AuthState = {
+    success: false,
+    error: null,
+  };
 
-    const formData = new FormData(e.currentTarget);
-    const result = await login({}, formData);
+  const [state, formAction, isPending] = useActionState(login, initialState);
 
-    if (result.success) {
+  useEffect(() => {
+    if (state.success && state.user) {
       // Still update Zustand for UI state (user info)
-      setAuth(result.user, 'session-in-cookie');
+      setAuth(state.user, 'session-in-cookie');
       router.push('/dashboard');
       router.refresh();
-    } else {
-      setError(result.error || 'Login failed');
-      setLoading(false);
     }
-  };
+  }, [state, setAuth, router]);
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4 relative">
@@ -63,10 +58,10 @@ export default function LoginPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {error && (
+            <form action={formAction} className="space-y-4">
+              {state.error && (
                 <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
-                  {error}
+                  {state.error}
                 </div>
               )}
 
@@ -78,7 +73,7 @@ export default function LoginPage() {
                   type="email"
                   placeholder="you@example.com"
                   className="h-11 bg-background/50"
-                  disabled={loading}
+                  disabled={isPending}
                   required
                   autoFocus
                 />
@@ -93,7 +88,7 @@ export default function LoginPage() {
                     type={showPassword ? 'text' : 'password'}
                     placeholder="Enter your password"
                     className="h-11 bg-background/50 pr-10"
-                    disabled={loading}
+                    disabled={isPending}
                     required
                   />
                   <Button
@@ -102,7 +97,7 @@ export default function LoginPage() {
                     size="sm"
                     className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
                     onClick={() => setShowPassword(!showPassword)}
-                    disabled={loading}
+                    disabled={isPending}
                   >
                     {showPassword ? (
                       <EyeOff className="h-4 w-4 text-muted-foreground" />
@@ -119,7 +114,7 @@ export default function LoginPage() {
                     type="checkbox"
                     id="remember"
                     className="w-4 h-4 rounded border-input"
-                    disabled={loading}
+                    disabled={isPending}
                   />
                   <Label htmlFor="remember" className="text-sm text-muted-foreground cursor-pointer">
                     Remember me
@@ -128,7 +123,7 @@ export default function LoginPage() {
                 <Button
                   variant="link"
                   className="text-sm p-0 h-auto"
-                  disabled={loading}
+                  disabled={isPending}
                   type="button"
                 >
                   Forgot password?
@@ -138,9 +133,9 @@ export default function LoginPage() {
               <Button
                 type="submit"
                 className="w-full h-11 font-medium"
-                disabled={loading}
+                disabled={isPending}
               >
-                {loading ? 'Logging in...' : 'Login to Dashboard'}
+                {isPending ? 'Logging in...' : 'Login to Dashboard'}
               </Button>
             </form>
 

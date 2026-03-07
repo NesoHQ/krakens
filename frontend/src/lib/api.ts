@@ -65,13 +65,6 @@ api.interceptors.response.use(
 );
 
 
-// Authentication
-export const register = (email: string, password: string) =>
-  api.post<AuthResponse>('/auth/register', { email, password });
-
-export const login = (email: string, password: string) =>
-  api.post<AuthResponse>('/auth/login', { email, password });
-
 // Domains
 export const getDomains = () => api.get<Domain[]>('/domains');
 export const getDomainById = (id: string) => api.get<Domain>(`/domains/${id}`);
@@ -100,29 +93,5 @@ export const trackEvent = (apiKey: string, data: TrackEventRequest) =>
       'X-API-Key': apiKey,
     },
   });
-
-// Utility functions
-export const setAuthToken = (token: string) => {
-  if (typeof window !== 'undefined') {
-    localStorage.setItem('token', token);
-  }
-};
-
-export const getAuthToken = () => {
-  if (typeof window !== 'undefined') {
-    return localStorage.getItem('token');
-  }
-  return null;
-};
-
-export const removeAuthToken = () => {
-  if (typeof window !== 'undefined') {
-    localStorage.removeItem('token');
-  }
-};
-
-export const isAuthenticated = () => {
-  return !!getAuthToken();
-};
 
 export default api;
