@@ -108,6 +108,7 @@ func main() {
 	tracking.Use(middleware.TrackingCORSMiddleware())
 	{
 		tracking.POST("/api/track", trackingHandler.Track)
+		tracking.OPTIONS("/api/track", func(c *gin.Context) { c.Status(204) })
 	}
 
 	/*
