@@ -25,7 +25,7 @@ import (
 )
 
 func main() {
-	// Root context
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -73,6 +73,7 @@ func main() {
 	authService := service.NewAuthService(userRepo, cfg.JWTSecret)
 	domainService := service.NewDomainService(domainRepo)
 	apiKeyService := service.NewAPIKeyService(apiKeyRepo)
+
 	trackingService := service.NewTrackingService(
 		eventRepo,
 		redisCache,
@@ -99,43 +100,49 @@ func main() {
 		SkipPaths: []string{"/health"},
 	}))
 
-	// Global middlewares
-	router.Use(middleware.CORSMiddleware(cfg.FrontendURL))
-
-	// Tracking endpoint (custom permissive CORS)
-	router.POST("/api/track",
-		middleware.TrackingCORSMiddleware(),
-		trackingHandler.Track,
-	)
-
-	// Public routes
-	public := router.Group("/api")
+	/*
+		Tracking routes
+		These must accept requests from ANY website
+	*/
+	tracking := router.Group("/")
+	tracking.Use(middleware.TrackingCORSMiddleware())
 	{
-		public.POST("/auth/register", authHandler.Register)
-		public.POST("/auth/login", authHandler.Login)
+		tracking.POST("/api/track", trackingHandler.Track)
 	}
 
-	// Protected routes
-	protected := router.Group("/api")
-	protected.Use(middleware.AuthMiddleware(cfg.JWTSecret))
+	/*
+		Dashboard API
+		Only allow requests from frontend dashboard
+	*/
+	api := router.Group("/api")
+	api.Use(middleware.CORSMiddleware(cfg.FrontendURL))
 	{
-		// Domains
-		protected.GET("/domains", domainHandler.List)
-		protected.POST("/domains", domainHandler.Create)
-		protected.GET("/domains/:id", domainHandler.GetByID)
-		protected.PUT("/domains/:id", domainHandler.Update)
-		protected.POST("/domains/:id/verify", domainHandler.Verify)
-		protected.DELETE("/domains/:id", domainHandler.Delete)
+		// Public
+		api.POST("/auth/register", authHandler.Register)
+		api.POST("/auth/login", authHandler.Login)
 
-		// API Keys
-		protected.GET("/api-keys", apiKeyHandler.List)
-		protected.POST("/api-keys", apiKeyHandler.Create)
-		protected.DELETE("/api-keys/:id", apiKeyHandler.Revoke)
+		// Protected
+		protected := api.Group("/")
+		protected.Use(middleware.AuthMiddleware(cfg.JWTSecret))
+		{
+			// Domains
+			protected.GET("/domains", domainHandler.List)
+			protected.POST("/domains", domainHandler.Create)
+			protected.GET("/domains/:id", domainHandler.GetByID)
+			protected.PUT("/domains/:id", domainHandler.Update)
+			protected.POST("/domains/:id/verify", domainHandler.Verify)
+			protected.DELETE("/domains/:id", domainHandler.Delete)
 
-		// Stats
-		protected.GET("/stats/realtime", trackingHandler.GetRealtimeStats)
-		protected.GET("/stats/overview", trackingHandler.GetOverviewStats)
-		protected.GET("/stats/unified", trackingHandler.GetUnifiedStats)
+			// API Keys
+			protected.GET("/api-keys", apiKeyHandler.List)
+			protected.POST("/api-keys", apiKeyHandler.Create)
+			protected.DELETE("/api-keys/:id", apiKeyHandler.Revoke)
+
+			// Stats
+			protected.GET("/stats/realtime", trackingHandler.GetRealtimeStats)
+			protected.GET("/stats/overview", trackingHandler.GetOverviewStats)
+			protected.GET("/stats/unified", trackingHandler.GetUnifiedStats)
+		}
 	}
 
 	// Health endpoint
@@ -145,7 +152,7 @@ func main() {
 		})
 	})
 
-	// HTTP Server
+	// HTTP server
 	addr := fmt.Sprintf(":%s", cfg.Port)
 
 	srv := &http.Server{
@@ -156,7 +163,6 @@ func main() {
 		IdleTimeout:  60 * time.Second,
 	}
 
-	// Start server
 	go func() {
 		log.Printf("server starting on %s", addr)
 
