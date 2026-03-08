@@ -5,9 +5,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/gin-gonic/gin"
+
 	"github.com/nesohq/backend/internal/config"
 	"github.com/nesohq/backend/internal/domain"
 	"github.com/nesohq/backend/internal/handler"
@@ -20,87 +25,98 @@ import (
 )
 
 func main() {
+	// Root context
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	// Load config
 	cfg, err := config.Load()
 	if err != nil {
-		log.Fatal("Failed to load config:", err)
+		log.Fatal("failed to load config:", err)
 	}
 
-	// Initialize MongoDB
+	// MongoDB
 	mongodb, err := db.NewMongoDB(cfg.MongoDBURI, cfg.MongoDBDatabase)
 	if err != nil {
-		log.Fatal("Failed to connect to MongoDB:", err)
+		log.Fatal("failed to connect to MongoDB:", err)
 	}
 	defer mongodb.Close()
 
-	// Ensure Indexes
-	if err := mongodb.EnsureIndexes(context.Background()); err != nil {
-		log.Printf("Warning: Failed to ensure indexes: %v", err)
+	indexCtx, cancelIndex := context.WithTimeout(ctx, 10*time.Second)
+	defer cancelIndex()
+
+	if err := mongodb.EnsureIndexes(indexCtx); err != nil {
+		log.Printf("warning: failed to ensure indexes: %v", err)
 	}
 
-	// Initialize Redis
+	// Redis
 	redisCache, err := cache.NewRedisCache(cfg.RedisURL)
 	if err != nil {
-		log.Fatal("Failed to connect to Redis:", err)
+		log.Fatal("failed to connect to Redis:", err)
 	}
 	defer redisCache.Close()
 
-	// Initialize NATS
+	// NATS
 	natsQueue, err := queue.NewNATSQueue(cfg.NATSURL)
 	if err != nil {
-		log.Fatal("Failed to connect to NATS:", err)
+		log.Fatal("failed to connect to NATS:", err)
 	}
 	defer natsQueue.Close()
 
-	// Initialize repositories
+	// Repositories
 	userRepo := repository.NewUserRepository(mongodb.Database)
 	domainRepo := repository.NewDomainRepository(mongodb.Database)
 	apiKeyRepo := repository.NewAPIKeyRepository(mongodb.Database)
 	eventRepo := repository.NewEventRepository(mongodb.Database)
 
-	// Initialize services
+	// Services
 	authService := service.NewAuthService(userRepo, cfg.JWTSecret)
 	domainService := service.NewDomainService(domainRepo)
 	apiKeyService := service.NewAPIKeyService(apiKeyRepo)
-	trackingService := service.NewTrackingService(eventRepo, redisCache, natsQueue, cfg.ActiveVisitorTimeoutMins, cfg.RealtimeStatsWindowMins)
+	trackingService := service.NewTrackingService(
+		eventRepo,
+		redisCache,
+		natsQueue,
+		cfg.ActiveVisitorTimeoutMins,
+		cfg.RealtimeStatsWindowMins,
+	)
 
-	// Initialize handlers
+	// Handlers
 	authHandler := handler.NewAuthHandler(authService)
 	domainHandler := handler.NewDomainHandler(domainService)
 	apiKeyHandler := handler.NewAPIKeyHandler(apiKeyService)
 	trackingHandler := handler.NewTrackingHandler(trackingService, apiKeyService)
 
-	// Start event worker
-	go startEventWorker(natsQueue, eventRepo)
+	// Start background worker
+	go startEventWorker(ctx, natsQueue, eventRepo)
 
-	// Setup router
-	router := gin.Default()
+	// Router
+	router := gin.New()
+	router.Use(gin.Logger())
+	router.Use(gin.Recovery())
 
-	// Tracking endpoint (with permissive CORS - needs to accept requests from any website)
-	router.OPTIONS("/api/track", middleware.TrackingCORSMiddleware())
-	router.POST("/api/track", middleware.TrackingCORSMiddleware(), trackingHandler.Track)
+	router.Use(gin.LoggerWithConfig(gin.LoggerConfig{
+		SkipPaths: []string{"/health"},
+	}))
 
-	// Public routes (with restricted CORS)
-	router.OPTIONS("/api/auth/register", middleware.CORSMiddleware(cfg.FrontendURL))
-	router.OPTIONS("/api/auth/login", middleware.CORSMiddleware(cfg.FrontendURL))
+	// Global middlewares
+	router.Use(middleware.CORSMiddleware(cfg.FrontendURL))
 
+	// Tracking endpoint (custom permissive CORS)
+	router.POST("/api/track",
+		middleware.TrackingCORSMiddleware(),
+		trackingHandler.Track,
+	)
+
+	// Public routes
 	public := router.Group("/api")
-	public.Use(middleware.CORSMiddleware(cfg.FrontendURL))
 	{
 		public.POST("/auth/register", authHandler.Register)
 		public.POST("/auth/login", authHandler.Login)
 	}
 
 	// Protected routes
-	router.OPTIONS("/api/stats/realtime", middleware.CORSMiddleware(cfg.FrontendURL))
-	router.OPTIONS("/api/stats/overview", middleware.CORSMiddleware(cfg.FrontendURL))
-	router.OPTIONS("/api/domains", middleware.CORSMiddleware(cfg.FrontendURL))
-	router.OPTIONS("/api/domains/:id", middleware.CORSMiddleware(cfg.FrontendURL))
-	router.OPTIONS("/api/api-keys", middleware.CORSMiddleware(cfg.FrontendURL))
-	router.OPTIONS("/api/api-keys/:id", middleware.CORSMiddleware(cfg.FrontendURL))
-
 	protected := router.Group("/api")
-	protected.Use(middleware.CORSMiddleware(cfg.FrontendURL))
 	protected.Use(middleware.AuthMiddleware(cfg.JWTSecret))
 	{
 		// Domains
@@ -122,38 +138,83 @@ func main() {
 		protected.GET("/stats/unified", trackingHandler.GetUnifiedStats)
 	}
 
-	// Health check
+	// Health endpoint
 	router.GET("/health", func(c *gin.Context) {
-		c.JSON(200, gin.H{"status": "ok"})
+		c.JSON(http.StatusOK, gin.H{
+			"status": "ok",
+		})
 	})
 
-	// Start server
+	// HTTP Server
 	addr := fmt.Sprintf(":%s", cfg.Port)
-	log.Printf("Server starting on %s", addr)
-	if err := router.Run(addr); err != nil {
-		log.Fatal("Failed to start server:", err)
+
+	srv := &http.Server{
+		Addr:         addr,
+		Handler:      router,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		IdleTimeout:  60 * time.Second,
 	}
+
+	// Start server
+	go func() {
+		log.Printf("server starting on %s", addr)
+
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatal("failed to start server:", err)
+		}
+	}()
+
+	// Graceful shutdown
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+
+	<-quit
+	log.Println("shutting down server...")
+
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer shutdownCancel()
+
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		log.Fatal("server forced to shutdown:", err)
+	}
+
+	cancel()
+
+	log.Println("server exited properly")
 }
 
-func startEventWorker(natsQueue *queue.NATSQueue, eventRepo *repository.EventRepository) {
-	log.Println("Starting event worker...")
+func startEventWorker(
+	ctx context.Context,
+	natsQueue *queue.NATSQueue,
+	eventRepo *repository.EventRepository,
+) {
+
+	log.Println("starting event worker...")
 
 	_, err := natsQueue.Subscribe("events", func(data []byte) {
+
 		var event domain.Event
+
 		if err := json.Unmarshal(data, &event); err != nil {
-			log.Printf("Failed to unmarshal event: %v", err)
+			log.Printf("failed to unmarshal event: %v", err)
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		saveCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 		defer cancel()
 
-		if err := eventRepo.Create(ctx, &event); err != nil {
-			log.Printf("Failed to save event: %v", err)
+		if err := eventRepo.Create(saveCtx, &event); err != nil {
+			log.Printf("failed to save event: %v", err)
 		}
+
 	})
 
 	if err != nil {
-		log.Fatal("Failed to subscribe to events:", err)
+		log.Fatal("failed to subscribe to events:", err)
 	}
+
+	<-ctx.Done()
+
+	log.Println("event worker shutting down")
 }
