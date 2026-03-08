@@ -33,9 +33,14 @@ func TrackingCORSMiddleware() gin.HandlerFunc {
 		}
 
 		c.Writer.Header().Set("Access-Control-Allow-Origin", origin) // dynamic origin
+		c.Writer.Header().Set("Vary", "Origin")
 		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-API-Key")
-		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+
+		if origin != "*" {
+			c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+		}
+
 		c.Writer.Header().Set("Access-Control-Max-Age", "86400")
 
 		if c.Request.Method == http.MethodOptions {
